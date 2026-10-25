@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="description" content="你肺裡住著一群菸蟲。拿起藍白拖，撐到戒菸滿一年。">
+<meta property="og:title" content="菸蟲退散">
+<meta property="og:description" content="你肺裡住著一群菸蟲。拿起藍白拖，撐到戒菸滿一年。你撐得過幾天？">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0d1719">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box}body{margin:0;font-size:14px}img{max-width:100%}[hidden]{display:none!important}html{height:100%}</style>
+<title>菸蟲退散</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: one-screen arcade — HUD on top, 3×3 lung "alveoli" holes on an X-ray lightbox, news ticker at bottom. Deliberate single dark (lightbox) look. */
+:root{
+  --bg:#0d1719; --panel:#14232600; --film:#18292d; --line:#2a4146;
+  --ink:#e9f0ea; --mute:#8aa3a0; --filter:#e8a33d; --lung:#e88a7c;
+  --danger:#ff5b4f; --good:#7fd69a; --slipper:#2f6fd6; --paper:#f3efe6;
+  --f-display:"Huninn","Noto Sans TC",system-ui,sans-serif;
+  --f-body:"Noto Sans TC",system-ui,sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,monospace;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);overflow:hidden;
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+.app{height:100%;display:flex;flex-direction:column;max-width:480px;margin:0 auto;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 10px;gap:10px;box-sizing:border-box}
+
+/* HUD */
+.hud{display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:end}
+.days{display:flex;align-items:baseline;gap:6px;font-family:var(--f-display)}
+.days .lbl{color:var(--mute);font-size:15px}
+.days b{font-family:var(--f-num);font-size:42px;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
+.stats{text-align:right;font-size:12px;color:var(--mute);display:grid;gap:2px}
+.stats b{font-family:var(--f-num);color:var(--filter);font-size:15px;font-variant-numeric:tabular-nums}
+.meter{grid-column:1/-1;display:grid;gap:4px}
+.mlbl{display:flex;justify-content:space-between;font-size:12px;color:var(--mute);letter-spacing:.08em}
+.mlbl b{font-family:var(--f-num);color:var(--ink)}
+.bar{height:10px;border-radius:6px;background:var(--film);overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--filter),var(--danger));transition:width .15s}
+.bar.hot i{animation:pulse .5s infinite alternate}
+@keyframes pulse{to{filter:brightness(1.5)}}
+.goal{grid-column:1/-1;position:relative;height:18px}
+.goal .track{position:absolute;left:0;right:0;top:7px;height:4px;background:var(--film);border-radius:2px}
+.goal .track i{display:block;height:100%;width:0;background:var(--good);border-radius:2px;transition:width .2s}
+.goal .tick{position:absolute;top:0;transform:translateX(-50%);font:500 9px var(--f-num);color:var(--mute);padding-top:12px}
+.goal .tick::before{content:"";position:absolute;left:50%;top:4px;width:2px;height:10px;background:var(--line)}
+.goal .tick.done{color:var(--good)}
+.goal .tick.done::before{background:var(--good)}
+
+/* Field */
+.field{flex:1;min-height:0;position:relative;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at 50% 45%,#1d353a 0%,var(--bg) 70%);border-radius:18px;border:1px solid var(--line)}
+.lungs{position:absolute;inset:6% 4%;opacity:.16;pointer-events:none}
+.lungs svg{width:100%;height:100%}
+.grid{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:4%;width:min(100%,58vh,400px);padding:4%;box-sizing:border-box}
+.hole{position:relative;aspect-ratio:1;border:0;background:none;padding:0;cursor:pointer;touch-action:manipulation;max-width:100%}
+.hole:focus-visible{outline:2px solid var(--filter);border-radius:12px}
+.pit{position:absolute;left:8%;right:8%;bottom:6%;height:26%;border-radius:50%;
+  background:radial-gradient(ellipse at 50% 40%,#050a0b 55%,#3a2a2a 100%);box-shadow:0 2px 0 #5a3b38}
+.mask{position:absolute;left:0;right:0;top:-10%;bottom:19%;overflow:hidden}
+.critter{position:absolute;left:18%;right:18%;bottom:0;height:88%;transform:translateY(105%);transition:transform .14s ease-out}
+.critter svg{width:100%;height:100%;display:block;overflow:visible}
+.critter.up{transform:translateY(0)}
+.critter.hit{animation:squish .22s forwards}
+@keyframes squish{0%{transform:translateY(0) scaleY(1)}40%{transform:translateY(8%) scale(1.25,.6)}100%{transform:translateY(105%) scale(1,1)}}
+.critter.shake{animation:shake .25s}
+@keyframes shake{25%{transform:translate(-6%,0) rotate(-6deg)}75%{transform:translate(6%,0) rotate(6deg)}}
+.smoke{animation:drift 1.6s ease-in-out infinite}
+@keyframes drift{50%{transform:translate(3px,-4px);opacity:.5}}
+.bubble{position:absolute;left:50%;bottom:92%;transform:translate(-50%,6px);min-width:max-content;max-width:150%;
+  background:var(--paper);color:#1c1c1c;font:500 11px/1.3 var(--f-display);padding:4px 8px;border-radius:10px;
+  opacity:0;transition:opacity .12s,transform .12s;pointer-events:none;z-index:3;white-space:nowrap}
+.bubble::after{content:"";position:absolute;left:50%;top:100%;margin-left:-4px;border:4px solid transparent;border-top-color:var(--paper)}
+.bubble.on{opacity:1;transform:translate(-50%,0)}
+.hole.tempt .bubble{background:var(--filter)}
+.hole.tempt .bubble::after{border-top-color:var(--filter)}
+
+.slipper{position:absolute;width:22%;max-width:96px;pointer-events:none;z-index:5;opacity:0;transform-origin:20% 90%}
+.slipper.go{animation:slap .26s ease-out}
+@keyframes slap{0%{opacity:1;transform:rotate(-55deg) translateY(-20%)}45%{opacity:1;transform:rotate(8deg)}100%{opacity:0;transform:rotate(0)}}
+.float{position:absolute;font:700 18px var(--f-num);pointer-events:none;z-index:6;animation:up .8s forwards;white-space:nowrap;transform:translateX(-50%)}
+.float.good{color:var(--good)} .float.bad{color:var(--danger)} .float.cool{color:#9fd8ff}
+@keyframes up{to{transform:translate(-50%,-48px);opacity:0}}
+.toast{position:absolute;left:12px;right:12px;top:12px;z-index:7;background:var(--paper);color:#1d1d1d;border-radius:14px;
+  padding:10px 14px;box-shadow:0 8px 24px #0008;display:grid;gap:2px;animation:drop .3s ease-out}
+.toast b{font:400 18px var(--f-display);color:#2b7a4b}
+.toast span{font-size:13px;line-height:1.45}
+@keyframes drop{from{transform:translateY(-16px);opacity:0}}
+
+/* Ticker */
+.ticker{display:flex;gap:8px;align-items:center;font-size:13px;min-height:32px;background:var(--film);border-radius:10px;padding:6px 10px;border:1px solid var(--line)}
+.ticker .tag{flex:none;background:var(--danger);color:#fff;font:700 11px var(--f-body);letter-spacing:.08em;padding:2px 6px;border-radius:4px}
+#news{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Overlays */
+.ov{position:fixed;inset:0;z-index:20;background:#0d1719ee;display:flex;align-items:center;justify-content:center;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px;overflow:auto}
+.card{width:100%;max-width:400px;display:grid;gap:16px;text-align:left}
+.card h1{font:400 52px/1 var(--f-display);margin:0;letter-spacing:.02em;text-wrap:balance}
+.card h1 em{font-style:normal;color:var(--filter)}
+.card .lead{margin:0;color:var(--mute);font-size:15px;line-height:1.6}
+.rules{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.rules li{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:center;font-size:14px;line-height:1.45}
+.rules li svg{width:44px;height:44px}
+.rules b{color:var(--ink)} .rules span{color:var(--mute)}
+.btn{font:400 22px var(--f-display);border:0;border-radius:14px;padding:14px;cursor:pointer;background:var(--filter);color:#1a1205;
+  box-shadow:0 4px 0 #9b6416;touch-action:manipulation}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #9b6416}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);box-shadow:none;font:500 15px var(--f-body);padding:10px}
+.best{font:500 12px var(--f-num);color:var(--mute)}
+.result{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.result div{background:var(--film);border:1px solid var(--line);border-radius:12px;padding:10px;display:grid;gap:2px}
+.result small{color:var(--mute);font-size:11px}
+.result b{font:700 17px var(--f-num);font-variant-numeric:tabular-nums}
+.quote{margin:0;padding:12px 14px;background:var(--film);border-radius:12px;font:400 16px/1.5 var(--f-display);color:var(--ink)}
+.quote small{display:block;color:var(--mute);font:12px var(--f-body);margin-top:4px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.note{font-size:11px;color:var(--mute);line-height:1.5;margin:0;-webkit-user-select:text;user-select:text}
+@media (prefers-reduced-motion:reduce){.smoke,.bar.hot i{animation:none}.toast{animation:none}}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="hud">
+    <div class="days"><span class="lbl">戒菸第</span><b id="days">0</b><span class="lbl">天</span></div>
+    <div class="stats"><div>省下 <b id="money">NT$0</b></div><div>連擊 <b id="combo">0</b></div></div>
+    <div class="meter">
+      <div class="mlbl"><span>菸癮</span><b id="cpct">0%</b></div>
+      <div class="bar" id="cbarWrap"><i id="cbar"></i></div>
+    </div>
+    <div class="goal" id="goal"><div class="track"><i id="gbar"></i></div></div>
+  </header>
+
+  <main class="field" id="field">
+    <div class="lungs" aria-hidden="true">
+      <svg viewBox="0 0 200 180" preserveAspectRatio="xMidYMid meet"><g fill="#e88a7c">
+        <rect x="96" y="0" width="8" height="60" rx="4"/>
+        <path d="M92 58 C70 40 30 50 18 100 C8 140 20 175 55 176 C85 177 92 150 92 120Z"/>
+        <path d="M108 58 C130 40 170 50 182 100 C192 140 180 175 145 176 C115 177 108 150 108 120Z"/></g></svg>
+    </div>
+    <div class="grid" id="grid"></div>
+    <svg class="slipper" id="slipper" viewBox="0 0 100 60" aria-hidden="true">
+      <ellipse cx="50" cy="34" rx="46" ry="20" fill="#f6f6f2" stroke="#2f6fd6" stroke-width="4"/>
+      <path d="M30 18 Q50 46 70 18" fill="none" stroke="#2f6fd6" stroke-width="10" stroke-linecap="round"/>
+    </svg>
+  </main>
+
+  <footer class="ticker"><span class="tag">最新消息</span><span id="news">菸蟲在你肺裡開派對，拿起藍白拖。</span></footer>
+</div>
+
+<div class="ov" id="startOv">
+  <div class="card">
+    <h1>菸蟲<em>退散</em></h1>
+    <p class="lead">你肺裡住著一群菸蟲，每天勸你「再一根就好」。拿起藍白拖，撐到戒菸滿一年。</p>
+    <ul class="rules" id="rules"></ul>
+    <button class="btn" id="startBtn">開始戒菸</button>
+    <div class="best" id="bestStart"></div>
+  </div>
+</div>
+
+<div class="ov" id="endOv" hidden>
+  <div class="card">
+    <h1 id="endTitle">破戒了</h1>
+    <p class="lead" id="endLead"></p>
+    <div class="result">
+      <div><small>戒菸天數</small><b id="rDays">0</b></div>
+      <div><small>拍死菸蟲</small><b id="rKills">0</b></div>
+      <div><small>省下</small><b id="rMoney">0</b></div>
+    </div>
+    <p class="quote" id="endQuote"></p>
+    <div class="row">
+      <button class="btn ghost" id="copyBtn">複製戰績</button>
+      <button class="btn" id="againBtn">再戒一次</button>
+    </div>
+    <p class="note" id="shareText" hidden></p>
+    <p class="note">省下金額以一天一包 NT$125 計。健康里程碑為一般戒菸研究的常見數據，個人狀況不同。需要協助可撥免費戒菸專線 0800-636-363。</p>
+  </div>
+</div>
+
+<script>
+(()=>{
+const GOAL=365, PACK=125;
+const $=id=>document.getElementById(id);
+
+/* ---------- sprites ---------- */
+const eyes=(y,angry)=>`<circle cx="40" cy="${y}" r="7" fill="#fff"/><circle cx="60" cy="${y}" r="7" fill="#fff"/>
+<circle cx="42" cy="${y+1}" r="3.2" fill="#111"/><circle cx="58" cy="${y+1}" r="3.2" fill="#111"/>
+${angry?`<path d="M31 ${y-11} L47 ${y-6} M69 ${y-11} L53 ${y-6}" stroke="#3a1d00" stroke-width="3.5" stroke-linecap="round"/>`:''}`;
+const SPR={
+bug:`<svg viewBox="0 0 100 110"><path class="smoke" d="M58 14 q9 -7 1 -14 q-8 -7 2 -14" fill="none" stroke="#cfd8d6" stroke-width="3" stroke-linecap="round" opacity=".8"/>
+<rect x="28" y="18" width="44" height="100" rx="22" fill="#f3efe6"/>
+<path d="M28 70h44M28 86h44M28 102h44" stroke="#d7d0c2" stroke-width="2"/>
+<rect x="28" y="18" width="44" height="40" rx="22" fill="#e8a33d"/>
+<circle cx="36" cy="26" r="2" fill="#c27e1c"/><circle cx="64" cy="30" r="2" fill="#c27e1c"/><circle cx="52" cy="22" r="1.6" fill="#c27e1c"/>
+${eyes(40,true)}<path d="M41 54 q9 6 18 0" stroke="#3a1d00" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`,
+elder:`<svg viewBox="0 0 100 110"><path class="smoke" d="M60 10 q10 -7 1 -14 q-8 -7 2 -14 M44 12 q-8 -6 0 -12" fill="none" stroke="#cfd8d6" stroke-width="3" stroke-linecap="round" opacity=".8"/>
+<rect x="24" y="14" width="52" height="104" rx="26" fill="#a9a59c"/>
+<path d="M24 72h52M24 90h52" stroke="#8a867d" stroke-width="2"/>
+<rect x="24" y="14" width="52" height="44" rx="26" fill="#9a6a2a"/>
+<path d="M30 24 q20 -8 40 0" stroke="#e9f0ea" stroke-width="3" fill="none"/>
+${eyes(40,false)}<circle cx="40" cy="40" r="9" fill="none" stroke="#111" stroke-width="2.5"/><circle cx="60" cy="40" r="9" fill="none" stroke="#111" stroke-width="2.5"/><path d="M49 40h2" stroke="#111" stroke-width="2.5"/>
+<path d="M36 54 q7 -5 14 0 q7 -5 14 0" stroke="#f3efe6" stroke-width="5" fill="none" stroke-linecap="round"/>
+<text x="50" y="96" text-anchor="middle" font-family="Huninn,sans-serif" font-size="18" fill="#2a2a2a">老</text></svg>`,
+tempt:`<svg viewBox="0 0 100 110"><path class="smoke" d="M50 4 q8 -6 0 -12 q-8 -6 1 -12" fill="none" stroke="#e9f0ea" stroke-width="3" stroke-linecap="round"/>
+<rect x="44" y="8" width="12" height="54" rx="2" fill="#f3efe6"/><rect x="44" y="8" width="12" height="6" fill="#ff7a3a"/><circle cx="50" cy="8" r="4" fill="#ffb347"/>
+<rect x="44" y="48" width="12" height="14" fill="#e8a33d"/>
+<rect x="20" y="52" width="60" height="58" rx="5" fill="#c43a31"/><rect x="20" y="52" width="60" height="12" fill="#f3efe6"/>
+<text x="50" y="92" text-anchor="middle" font-family="Huninn,sans-serif" font-size="14" fill="#f3efe6">最後一根</text></svg>`,
+gum:`<svg viewBox="0 0 100 110"><rect x="18" y="30" width="64" height="80" rx="10" fill="#2fa36b"/><rect x="18" y="30" width="64" height="18" rx="9" fill="#b9efcf"/>
+<path d="M50 56 q14 4 10 20 q-14 -2 -10 -20z" fill="#b9efcf"/>
+<text x="50" y="100" text-anchor="middle" font-family="Huninn,sans-serif" font-size="15" fill="#fff">口香糖</text></svg>`
+};
+$('rules').innerHTML=[
+ ['bug','拍菸蟲','戒菸天數增加，連擊 5 下以上有加成'],
+ ['elder','老菸蟲','第 14 天後出現，要拍兩下'],
+ ['tempt','最後一根','千萬別碰，一碰菸癮暴增'],
+ ['gum','口香糖','拍下去菸癮降低']
+].map(([k,b,s])=>`<li>${SPR[k]}<div><b>${b}</b><br><span>${s}</span></div></li>`).join('')+
+ `<li><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" fill="none" stroke="#ff5b4f" stroke-width="4"/><path d="M22 12v12" stroke="#ff5b4f" stroke-width="4" stroke-linecap="round"/><circle cx="22" cy="31" r="2.5" fill="#ff5b4f"/></svg><div><b>菸癮滿 100%</b><br><span>菸蟲跑掉會讓菸癮上升，滿了就破戒</span></div></li>`;
+
+/* ---------- lines ---------- */
+const L={
+ bug:["飯後一根，快活似神仙","壓力這麼大，抽一根啦","戒菸？明天再戒啦","便利商店就在樓下喔","喝酒不抽菸，等於沒喝","一根而已又不會怎樣","你阿公抽到九十歲欸","上廁所不抽很無聊吧"],
+ elder:["我在你肺裡住十年了","房租都沒收，捨得趕我？","當年你第一根是我帶的","少年仔，不要衝動"],
+ tempt:["最後一根就好","今天辛苦了，獎勵自己","朋友遞的，不接不給面子","抽完這根就戒，真的"],
+ gum:["嚼我！"],
+ ouch:["哎唷！","拖鞋犯規！","我還會回來的…","藍白拖太狠了","痛痛痛"],
+ elderHit:["我還沒死","這點力道？","骨頭硬啦"],
+ escape:["菸蟲溜走了，菸癮上升","菸蟲在你腦中喊「來一根」","有一隻跑去便利商店排隊了","菸蟲成功說服你的手指發癢"],
+ refuse:["你看著「最後一根」，然後走開了","誘惑自動熄滅，你忍住了","朋友收回香菸，你保住面子跟肺"]
+};
+const pick=a=>a[Math.random()*a.length|0];
+
+/* ---------- milestones ---------- */
+const MS=[
+ {d:1,  t:"戒菸 24 小時",m:"血中一氧化碳回到正常值。菸蟲開始覺得房租變貴了。"},
+ {d:3,  t:"戒菸 3 天",  m:"尼古丁大致排出體外。接下來菸蟲會特別吵，正常現象。"},
+ {d:14, t:"戒菸 2 週",  m:"血液循環開始改善，爬樓梯比較不喘。老菸蟲坐不住了。"},
+ {d:30, t:"戒菸 1 個月",m:"咳嗽和呼吸短促逐漸減少。已經省下 NT$3,750。"},
+ {d:90, t:"戒菸 3 個月",m:"肺功能明顯提升。菸蟲開始互相推卸責任。"},
+ {d:180,t:"戒菸半年",  m:"省下 NT$22,500，夠換一支新手機。"},
+];
+const goal=$('goal');
+[...MS.map(m=>m.d).filter(d=>d>=14),GOAL].forEach(d=>{
+  const s=document.createElement('span');s.className='tick';s.dataset.d=d;
+  s.style.left=(d/GOAL*100)+'%';s.textContent=d===GOAL?'1年':d+'天';goal.appendChild(s);
+});
+
+/* ---------- audio ---------- */
+let ac=null;
+function tone(f,dur,type='square',vol=.06,slide=0){
+  if(!ac)return;try{const o=ac.createOscillator(),g=ac.createGain(),t=ac.currentTime;
+  o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+dur);
+  g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g).connect(ac.destination);o.start(t);o.stop(t+dur);}catch(e){}
+}
+const sfx={slap:()=>{tone(180,.08,'square',.08,60)},kill:()=>{tone(520,.08,'triangle',.07,900)},
+ bad:()=>{tone(220,.35,'sawtooth',.06,90)},gum:()=>{tone(660,.12,'sine',.08,1000)},ms:()=>{[523,659,784].forEach((f,i)=>setTimeout(()=>tone(f,.15,'triangle',.07),i*90))}};
+
+/* ---------- state ---------- */
+const grid=$('grid'), field=$('field'), slipper=$('slipper');
+let best=0;try{best=+localStorage.getItem('smokebug_best')||0}catch(e){}
+const holes=[];
+for(let i=0;i<9;i++){
+  const b=document.createElement('button');b.className='hole';b.id='hole'+i;b.setAttribute('aria-label','肺泡 '+(i+1));
+  b.innerHTML='<div class="pit"></div><div class="mask"><div class="critter"></div></div><div class="bubble"></div>';
+  grid.appendChild(b);
+  const h={el:b,cr:b.querySelector('.critter'),bb:b.querySelector('.bubble'),type:null,hp:0,t:null,lock:0,bt:null};
+  b.addEventListener('pointerdown',e=>{e.preventDefault();hit(h)});
+  b.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();hit(h)}});
+  holes.push(h);
+}
+let S={};
+function reset(){S={run:false,days:0,crave:0,combo:0,kills:0,refused:0,smoked:0,msi:0,last:0,spawnT:null};}
+reset();
+
+function say(h,txt,ms=900){h.bb.textContent=txt;h.bb.classList.add('on');clearTimeout(h.bt);h.bt=setTimeout(()=>h.bb.classList.remove('on'),ms)}
+function news(t){$('news').textContent=t}
+function floatAt(h,txt,cls){
+  const r=h.el.getBoundingClientRect(),f=field.getBoundingClientRect();
+  const d=document.createElement('div');d.className='float '+cls;d.textContent=txt;
+  d.style.left=(r.left-f.left+r.width/2)+'px';d.style.top=(r.top-f.top+r.height*.1)+'px';
+  field.appendChild(d);setTimeout(()=>d.remove(),820);
+}
+function slap(h){
+  const r=h.el.getBoundingClientRect(),f=field.getBoundingClientRect();
+  slipper.style.left=(r.left-f.left+r.width*.25)+'px';slipper.style.top=(r.top-f.top+r.height*.05)+'px';
+  slipper.classList.remove('go');void slipper.offsetWidth;slipper.classList.add('go');
+}
+
+/* ---------- spawn ---------- */
+function prog(){return Math.min(S.days/GOAL,1)}
+function chooseType(){
+  const r=Math.random(),p=prog();
+  const wTempt=.15+.08*p, wGum=.08, wElder=S.days>=14?.14+.08*p:0;
+  if(r<wTempt)return'tempt';if(r<wTempt+wGum)return'gum';if(r<wTempt+wGum+wElder)return'elder';return'bug';
+}
+function spawn(){
+  const now=performance.now();
+  const free=holes.filter(h=>!h.type&&now>h.lock);if(!free.length)return;
+  const h=pick(free),type=chooseType();
+  h.type=type;h.hp=type==='elder'?2:1;
+  h.el.classList.toggle('tempt',type==='tempt');
+  h.cr.className='critter';h.cr.innerHTML=SPR[type];
+  void h.cr.offsetWidth;h.cr.classList.add('up');
+  if(type!=='gum'||Math.random()<.5){if(Math.random()<.55||type==='tempt')say(h,pick(L[type]),1100)}
+  const p=prog();let stay=1500-620*p;if(type==='tempt')stay+=500;if(type==='gum')stay-=200;if(type==='elder')stay+=350;
+  h.t=setTimeout(()=>expire(h),stay);
+}
+function schedule(){
+  if(!S.run)return;spawn();
+  const p=prog();if(p>.35&&Math.random()<.3+.3*p)setTimeout(()=>S.run&&spawn(),120);
+  S.spawnT=setTimeout(schedule,900-430*p+Math.random()*200);
+}
+function down(h,cls){
+  clearTimeout(h.t);h.type=null;h.el.classList.remove('tempt');
+  if(cls){h.cr.classList.add(cls);}else{h.cr.classList.remove('up');}
+  h.lock=performance.now()+260;
+}
+function expire(h){
+  if(!S.run||!h.type)return;
+  const t=h.type;down(h);
+  if(t==='bug'||t==='elder'){S.crave+=t==='elder'?16:11;S.combo=0;news(pick(L.escape));floatAt(h,'菸癮↑','bad')}
+  else if(t==='tempt'){S.refused++;news(pick(L.refuse))}
+  render();
+}
+
+/* ---------- hit ---------- */
+function hit(h){
+  if(!S.run)return;slap(h);sfx.slap();
+  if(!h.type){return}
+  const t=h.type;
+  if(t==='bug'||t==='elder'){
+    h.hp--;
+    if(h.hp>0){say(h,pick(L.elderHit),700);h.cr.classList.remove('shake');void h.cr.offsetWidth;h.cr.classList.add('shake');
+      clearTimeout(h.t);h.t=setTimeout(()=>expire(h),700);return}
+    const add=(t==='elder'?8:3)+(S.combo>=5?2:0);
+    S.combo++;S.kills++;S.days=Math.min(GOAL,S.days+add);
+    say(h,pick(L.ouch),600);down(h,'hit');sfx.kill();floatAt(h,'+'+add+'天','good');
+    checkMS();
+  }else if(t==='tempt'){
+    S.smoked++;S.crave+=24;S.combo=0;down(h,'hit');sfx.bad();floatAt(h,'抽了一根','bad');
+    news('你抽了「最後一根」。菸蟲們集體鼓掌。');
+  }else if(t==='gum'){
+    S.crave=Math.max(0,S.crave-20);down(h,'hit');sfx.gum();floatAt(h,'菸癮 −20%','cool');news('嚼口香糖，嘴巴有事做，菸蟲閉嘴三秒。');
+  }
+  render();
+  if(S.days>=GOAL)end(true);
+}
+function checkMS(){
+  while(S.msi<MS.length&&S.days>=MS[S.msi].d){
+    const m=MS[S.msi++];sfx.ms();news(m.t+'：'+m.m);
+    const old=field.querySelector('.toast');if(old)old.remove();
+    const d=document.createElement('div');d.className='toast';d.innerHTML=`<b>${m.t}</b><span>${m.m}</span>`;
+    field.appendChild(d);setTimeout(()=>d.remove(),2600);
+  }
+}
+
+/* ---------- render / loop ---------- */
+const fmt=n=>'NT$'+n.toLocaleString('en-US');
+function render(){
+  S.crave=Math.max(0,Math.min(100,S.crave));
+  $('days').textContent=S.days;$('money').textContent=fmt(S.days*PACK);$('combo').textContent=S.combo;
+  $('cpct').textContent=Math.round(S.crave)+'%';$('cbar').style.width=S.crave+'%';
+  $('cbarWrap').classList.toggle('hot',S.crave>70);
+  $('gbar').style.width=(S.days/GOAL*100)+'%';
+  goal.querySelectorAll('.tick').forEach(t=>t.classList.toggle('done',S.days>=+t.dataset.d));
+}
+function frame(ts){
+  if(!S.run)return;
+  const dt=S.last?(ts-S.last)/1000:0;S.last=ts;
+  S.crave-=0.9*dt;render();
+  if(S.crave>=100){end(false);return}
+  requestAnimationFrame(frame);
+}
+
+/* ---------- start / end ---------- */
+function start(){
+  try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume&&ac.resume()}catch(e){}
+  holes.forEach(h=>{clearTimeout(h.t);h.type=null;h.cr.className='critter';h.bb.classList.remove('on');h.el.classList.remove('tempt')});
+  field.querySelectorAll('.toast,.float').forEach(n=>n.remove());
+  reset();S.run=true;render();news('戒菸第一天。菸蟲們還不知道你是認真的。');
+  $('startOv').hidden=true;$('endOv').hidden=true;
+  setTimeout(schedule,500);requestAnimationFrame(frame);
+}
+function end(win){
+  S.run=false;clearTimeout(S.spawnT);holes.forEach(h=>{clearTimeout(h.t);if(h.type)down(h)});
+  if(S.days>best){best=S.days;try{localStorage.setItem('smokebug_best',best)}catch(e){}}
+  $('rDays').textContent=S.days;$('rKills').textContent=S.kills;$('rMoney').textContent=fmt(S.days*PACK);
+  let title,lead,quote,who;
+  if(win){
+    title=S.smoked===0?'鋼鐵肺':S.smoked<=2?'戒菸成功':'險勝';
+    lead=`撐滿一年。冠心病風險約降到吸菸者的一半，省下 ${fmt(GOAL*PACK)}。`+(S.smoked?`途中破功 ${S.smoked} 次，不過還是撐住了。`:'一根都沒碰。');
+    quote='……好啦，我們搬去隔壁那位的肺了。';who='菸蟲代表，打包中';
+  }else{
+    title='破戒了';
+    lead=S.days<3?`第 ${S.days} 天就失守，戒斷期最難熬，不意外。`:S.days<30?`第 ${S.days} 天在便利商店門口失守。`:S.days<180?`撐了 ${S.days} 天，比上次多嗎？`:`都撐到第 ${S.days} 天了，不甘心吧。`;
+    quote=S.days<30?'我就說你戒不掉。':S.days<180?'其實我差點就要搬家了。':'嚇死，差一點點就被趕走。';who='你肺裡的菸蟲';
+  }
+  $('endTitle').textContent=title;$('endLead').textContent=lead;
+  $('endQuote').innerHTML=`「${quote}」<small>— ${who}</small>`;
+  $('shareText').hidden=true;$('copyBtn').textContent='複製戰績';
+  $('endOv').hidden=false;
+}
+function shareText(){
+  return S.days>=GOAL?`我在《菸蟲退散》戒菸滿一年，拍死 ${S.kills} 隻菸蟲，省下 ${fmt(GOAL*PACK)}。你撐得過幾天？`
+   :`我在《菸蟲退散》戒菸第 ${S.days} 天破功，拍死 ${S.kills} 隻菸蟲。你撐得過幾天？`;
+}
+$('copyBtn').addEventListener('click',()=>{
+  const t=shareText(),el=$('shareText');
+  const fallback=()=>{el.hidden=false;el.textContent=t;const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);$('copyBtn').textContent='請長按複製'};
+  try{navigator.clipboard.writeText(t).then(()=>{$('copyBtn').textContent='已複製'},fallback)}catch(e){fallback()}
+});
+$('startBtn').addEventListener('click',start);
+$('againBtn').addEventListener('click',start);
+$('bestStart').textContent=best?`最佳紀錄：戒菸 ${best} 天`:'';
+render();
+})();
+</script>
+</body>
+</html>
