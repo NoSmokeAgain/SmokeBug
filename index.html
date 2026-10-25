@@ -10,15 +10,14 @@
 <meta property="og:image" content="https://nosmokeagain.github.io/SmokeBug/IMG_7618.png">
 <meta property="og:url" content="https://nosmokeagain.github.io/SmokeBug/">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#0d1719">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box}body{margin:0;font-size:14px}img{max-width:100%}[hidden]{display:none!important}html{height:100%}</style>
 <title>菸蟲退散</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500;700&display=swap">
 <style>
-/* Layout: one-screen arcade — HUD on top, 3×3 lung "alveoli" holes on an X-ray lightbox, news ticker at bottom. Deliberate single dark (lightbox) look. */
+/* Layout: one-screen arcade — HUD on top, 3×3 alveoli holes on an X-ray lightbox whose lungs heal from soot-brown to pink, news ticker at bottom. Deliberate single dark look. */
 :root{
-  --bg:#0d1719; --panel:#14232600; --film:#18292d; --line:#2a4146;
+  --bg:#0d1719; --film:#18292d; --line:#2a4146;
   --ink:#e9f0ea; --mute:#8aa3a0; --filter:#e8a33d; --lung:#e88a7c;
   --danger:#ff5b4f; --good:#7fd69a; --slipper:#2f6fd6; --paper:#f3efe6;
   --f-display:"Huninn","Noto Sans TC",system-ui,sans-serif;
@@ -34,9 +33,11 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-body);overflow:hi
 
 /* HUD */
 .hud{display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:end}
-.days{display:flex;align-items:baseline;gap:6px;font-family:var(--f-display)}
-.days .lbl{color:var(--mute);font-size:15px}
-.days b{font-family:var(--f-num);font-size:42px;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
+.days{display:flex;align-items:baseline;gap:6px;font-family:var(--f-display);min-width:0}
+.days .lbl{color:var(--mute);font-size:15px;white-space:nowrap}
+.days b{font-family:var(--f-num);font-size:42px;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums;display:inline-block}
+.days b.bump{animation:bump .25s}
+@keyframes bump{40%{transform:scale(1.25);color:var(--good)}}
 .stats{text-align:right;font-size:12px;color:var(--mute);display:grid;gap:2px}
 .stats b{font-family:var(--f-num);color:var(--filter);font-size:15px;font-variant-numeric:tabular-nums}
 .meter{grid-column:1/-1;display:grid;gap:4px}
@@ -45,19 +46,23 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-body);overflow:hi
 .bar{height:10px;border-radius:6px;background:var(--film);overflow:hidden;border:1px solid var(--line)}
 .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--filter),var(--danger));transition:width .15s}
 .bar.hot i{animation:pulse .5s infinite alternate}
-@keyframes pulse{to{filter:brightness(1.5)}}
+@keyframes pulse{to{filter:brightness(1.6)}}
 .goal{grid-column:1/-1;position:relative;height:18px}
 .goal .track{position:absolute;left:0;right:0;top:7px;height:4px;background:var(--film);border-radius:2px}
 .goal .track i{display:block;height:100%;width:0;background:var(--good);border-radius:2px;transition:width .2s}
-.goal .tick{position:absolute;top:0;transform:translateX(-50%);font:500 9px var(--f-num);color:var(--mute);padding-top:12px}
+.goal .tick{position:absolute;top:0;transform:translateX(-50%);font:500 9px var(--f-num);color:var(--mute);padding-top:12px;white-space:nowrap}
 .goal .tick::before{content:"";position:absolute;left:50%;top:4px;width:2px;height:10px;background:var(--line)}
-.goal .tick.done{color:var(--good)}
-.goal .tick.done::before{background:var(--good)}
+.goal .tick.done{color:var(--good)} .goal .tick.done::before{background:var(--good)}
 
 /* Field */
 .field{flex:1;min-height:0;position:relative;display:flex;align-items:center;justify-content:center;
-  background:radial-gradient(ellipse at 50% 45%,#1d353a 0%,var(--bg) 70%);border-radius:18px;border:1px solid var(--line)}
-.lungs{position:absolute;inset:6% 4%;opacity:.16;pointer-events:none}
+  background:radial-gradient(ellipse at 50% 45%,#1d353a 0%,var(--bg) 70%);border-radius:18px;border:1px solid var(--line);--v:0}
+.field::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:8;
+  box-shadow:inset 0 0 60px rgba(255,60,40,var(--v))}
+.field.shake{animation:fshake .18s}
+@keyframes fshake{25%{transform:translate(-4px,2px)}50%{transform:translate(3px,-3px)}75%{transform:translate(-2px,1px)}}
+.lungs{position:absolute;inset:6% 4%;pointer-events:none;opacity:.22;animation:breathe 3.2s ease-in-out infinite}
+@keyframes breathe{50%{transform:scale(1.035)}}
 .lungs svg{width:100%;height:100%}
 .grid{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:4%;width:min(100%,58vh,400px);padding:4%;box-sizing:border-box}
 .hole{position:relative;aspect-ratio:1;border:0;background:none;padding:0;cursor:pointer;touch-action:manipulation;max-width:100%}
@@ -65,34 +70,57 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-body);overflow:hi
 .pit{position:absolute;left:8%;right:8%;bottom:6%;height:26%;border-radius:50%;
   background:radial-gradient(ellipse at 50% 40%,#050a0b 55%,#3a2a2a 100%);box-shadow:0 2px 0 #5a3b38}
 .mask{position:absolute;left:0;right:0;top:-10%;bottom:19%;overflow:hidden}
-.critter{position:absolute;left:18%;right:18%;bottom:0;height:88%;transform:translateY(105%);transition:transform .14s ease-out}
-.critter svg{width:100%;height:100%;display:block;overflow:visible}
+.critter{position:absolute;left:18%;right:18%;bottom:0;height:88%;transform:translateY(105%);transition:transform .13s cubic-bezier(.3,1.6,.6,1)}
+.critter svg{width:100%;height:100%;display:block;overflow:visible;transform-origin:50% 100%}
 .critter.up{transform:translateY(0)}
-.critter.hit{animation:squish .22s forwards}
-@keyframes squish{0%{transform:translateY(0) scaleY(1)}40%{transform:translateY(8%) scale(1.25,.6)}100%{transform:translateY(105%) scale(1,1)}}
-.critter.shake{animation:shake .25s}
-@keyframes shake{25%{transform:translate(-6%,0) rotate(-6deg)}75%{transform:translate(6%,0) rotate(6deg)}}
-.smoke{animation:drift 1.6s ease-in-out infinite}
-@keyframes drift{50%{transform:translate(3px,-4px);opacity:.5}}
-.bubble{position:absolute;left:50%;bottom:92%;transform:translate(-50%,6px);min-width:max-content;max-width:150%;
+.critter.up svg{animation:wiggle .42s ease-in-out infinite alternate}
+.critter.up.tempt svg{animation:glow .6s ease-in-out infinite alternate}
+@keyframes wiggle{from{transform:rotate(-5deg) scaleY(1)}to{transform:rotate(5deg) scaleY(1.04)}}
+@keyframes glow{to{filter:drop-shadow(0 0 8px #ff9a3a)}}
+.critter.hit{transition:none;animation:squish .24s forwards}
+@keyframes squish{0%{transform:translateY(0) scale(1)}35%{transform:translateY(10%) scale(1.35,.5)}100%{transform:translateY(105%) scale(1)}}
+.critter.shake svg{animation:shake .25s}
+@keyframes shake{25%{transform:translateX(-8%) rotate(-10deg)}75%{transform:translateX(8%) rotate(10deg)}}
+.smoke{animation:drift 1.4s ease-in-out infinite}
+@keyframes drift{50%{transform:translate(3px,-5px);opacity:.4}}
+.bubble{position:absolute;left:50%;bottom:92%;transform:translate(-50%,6px) scale(.8);min-width:max-content;
   background:var(--paper);color:#1c1c1c;font:500 11px/1.3 var(--f-display);padding:4px 8px;border-radius:10px;
-  opacity:0;transition:opacity .12s,transform .12s;pointer-events:none;z-index:3;white-space:nowrap}
+  opacity:0;transition:opacity .12s,transform .15s cubic-bezier(.3,1.6,.6,1);pointer-events:none;z-index:3;white-space:nowrap}
 .bubble::after{content:"";position:absolute;left:50%;top:100%;margin-left:-4px;border:4px solid transparent;border-top-color:var(--paper)}
-.bubble.on{opacity:1;transform:translate(-50%,0)}
-.hole.tempt .bubble{background:var(--filter)}
-.hole.tempt .bubble::after{border-top-color:var(--filter)}
+.bubble.on{opacity:1;transform:translate(-50%,0) scale(1)}
+.hole:nth-child(3n+1) .bubble{left:20%;transform:translate(-20%,6px) scale(.8)}
+.hole:nth-child(3n+1) .bubble.on{transform:translate(-20%,0) scale(1)}
+.hole:nth-child(3n+1) .bubble::after{left:30%}
+.hole:nth-child(3n) .bubble{left:80%;transform:translate(-80%,6px) scale(.8)}
+.hole:nth-child(3n) .bubble.on{transform:translate(-80%,0) scale(1)}
+.hole:nth-child(3n) .bubble::after{left:70%}
+.hole.tempt .bubble{background:var(--filter)} .hole.tempt .bubble::after{border-top-color:var(--filter)}
 
-.slipper{position:absolute;width:22%;max-width:96px;pointer-events:none;z-index:5;opacity:0;transform-origin:20% 90%}
-.slipper.go{animation:slap .26s ease-out}
-@keyframes slap{0%{opacity:1;transform:rotate(-55deg) translateY(-20%)}45%{opacity:1;transform:rotate(8deg)}100%{opacity:0;transform:rotate(0)}}
-.float{position:absolute;font:700 18px var(--f-num);pointer-events:none;z-index:6;animation:up .8s forwards;white-space:nowrap;transform:translateX(-50%)}
+.slipper{position:absolute;width:24%;max-width:100px;pointer-events:none;z-index:5;opacity:0;transform-origin:20% 90%}
+.slipper.go{animation:slap .24s ease-out}
+@keyframes slap{0%{opacity:1;transform:rotate(-60deg) translateY(-25%)}40%{opacity:1;transform:rotate(10deg) scale(1.1)}100%{opacity:0;transform:rotate(0)}}
+.fx{position:absolute;pointer-events:none;z-index:6}
+.float{font:700 18px var(--f-num);animation:up .8s forwards;white-space:nowrap;transform:translateX(-50%)}
 .float.good{color:var(--good)} .float.bad{color:var(--danger)} .float.cool{color:#9fd8ff}
-@keyframes up{to{transform:translate(-50%,-48px);opacity:0}}
+@keyframes up{to{transform:translate(-50%,-52px);opacity:0}}
+.bam{font:400 26px var(--f-display);color:var(--paper);-webkit-text-stroke:1px #0d1719;transform:translate(-50%,-50%);animation:bam .35s forwards;white-space:nowrap}
+@keyframes bam{0%{transform:translate(-50%,-50%) scale(.3) rotate(-15deg)}40%{transform:translate(-50%,-50%) scale(1.2) rotate(-8deg)}100%{transform:translate(-50%,-70%) scale(1);opacity:0}}
+.pt{width:9px;height:9px;border-radius:50%;animation:burst .55s ease-out forwards}
+@keyframes burst{to{transform:translate(var(--dx),var(--dy)) scale(.2);opacity:0}}
+.pop{left:50%;top:42%;font:400 40px var(--f-display);color:var(--filter);-webkit-text-stroke:1.5px #0d1719;transform:translate(-50%,-50%);animation:pop .9s forwards;white-space:nowrap;z-index:7}
+@keyframes pop{0%{transform:translate(-50%,-50%) scale(.2)}25%{transform:translate(-50%,-50%) scale(1.15)}70%{opacity:1}100%{transform:translate(-50%,-80%) scale(1);opacity:0}}
+.cough{inset:0;border-radius:18px;background:radial-gradient(circle at 50% 50%,#9aa3a0cc,#5b6462aa 60%,transparent 90%);
+  display:flex;align-items:center;justify-content:center;font:400 34px var(--f-display);color:#1c1c1c;animation:cough 1.1s forwards;z-index:7}
+@keyframes cough{0%{opacity:0}15%{opacity:1}70%{opacity:1}100%{opacity:0}}
 .toast{position:absolute;left:12px;right:12px;top:12px;z-index:7;background:var(--paper);color:#1d1d1d;border-radius:14px;
   padding:10px 14px;box-shadow:0 8px 24px #0008;display:grid;gap:2px;animation:drop .3s ease-out}
 .toast b{font:400 18px var(--f-display);color:#2b7a4b}
 .toast span{font-size:13px;line-height:1.45}
 @keyframes drop{from{transform:translateY(-16px);opacity:0}}
+.mute{position:absolute;right:8px;bottom:8px;z-index:9;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);
+  background:var(--film);color:var(--ink);display:grid;place-items:center;cursor:pointer;padding:0}
+.mute svg{width:20px;height:20px}
+.mute:focus-visible{outline:2px solid var(--filter)}
 
 /* Ticker */
 .ticker{display:flex;gap:8px;align-items:center;font-size:13px;min-height:32px;background:var(--film);border-radius:10px;padding:6px 10px;border:1px solid var(--line)}
@@ -100,12 +128,16 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-body);overflow:hi
 #news{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* Overlays */
-.ov{position:fixed;inset:0;z-index:20;background:#0d1719ee;display:flex;align-items:center;justify-content:center;
+.ov{position:fixed;inset:0;z-index:20;background:#0d1719f0;display:flex;align-items:flex-start;justify-content:center;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px;overflow:auto}
-.card{width:100%;max-width:400px;display:grid;gap:16px;text-align:left}
-.card h1{font:400 52px/1 var(--f-display);margin:0;letter-spacing:.02em;text-wrap:balance}
+.card{width:100%;max-width:400px;display:grid;gap:16px;text-align:left;margin:auto 0}
+.card h1{font:400 52px/1.05 var(--f-display);margin:0;letter-spacing:.02em;text-wrap:balance}
 .card h1 em{font-style:normal;color:var(--filter)}
 .card .lead{margin:0;color:var(--mute);font-size:15px;line-height:1.6}
+.langs{display:inline-grid;grid-template-columns:repeat(3,auto);gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;justify-self:start}
+.langs button{font:500 14px var(--f-body);background:transparent;color:var(--mute);border:0;padding:7px 14px;cursor:pointer}
+.langs button[aria-pressed="true"]{background:var(--filter);color:#1a1205}
+.langs button:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
 .rules{list-style:none;margin:0;padding:0;display:grid;gap:10px}
 .rules li{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:center;font-size:14px;line-height:1.45}
 .rules li svg{width:44px;height:44px}
@@ -117,24 +149,24 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-body);overflow:hi
 .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);box-shadow:none;font:500 15px var(--f-body);padding:10px}
 .best{font:500 12px var(--f-num);color:var(--mute)}
 .result{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.result div{background:var(--film);border:1px solid var(--line);border-radius:12px;padding:10px;display:grid;gap:2px}
+.result div{background:var(--film);border:1px solid var(--line);border-radius:12px;padding:10px;display:grid;gap:2px;min-width:0}
 .result small{color:var(--mute);font-size:11px}
-.result b{font:700 17px var(--f-num);font-variant-numeric:tabular-nums}
+.result b{font:700 17px var(--f-num);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .quote{margin:0;padding:12px 14px;background:var(--film);border-radius:12px;font:400 16px/1.5 var(--f-display);color:var(--ink)}
 .quote small{display:block;color:var(--mute);font:12px var(--f-body);margin-top:4px}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.note{font-size:11px;color:var(--mute);line-height:1.5;margin:0;-webkit-user-select:text;user-select:text}
-@media (prefers-reduced-motion:reduce){.smoke,.bar.hot i{animation:none}.toast{animation:none}}
+.note{font-size:11px;color:var(--mute);line-height:1.5;margin:0;-webkit-user-select:text;user-select:text;white-space:pre-line}
+@media (prefers-reduced-motion:reduce){.smoke,.bar.hot i,.lungs,.critter.up svg{animation:none}.toast{animation:none}.field.shake{animation:none}}
 </style>
 </head>
 <body>
 
 <div class="app">
   <header class="hud">
-    <div class="days"><span class="lbl">戒菸第</span><b id="days">0</b><span class="lbl">天</span></div>
-    <div class="stats"><div>省下 <b id="money">NT$0</b></div><div>連擊 <b id="combo">0</b></div></div>
+    <div class="days"><span class="lbl" id="lDayPre">戒菸第</span><b id="days">0</b><span class="lbl" id="lDayPost">天</span></div>
+    <div class="stats"><div><span id="lSaved">省下</span> <b id="money">NT$0</b></div><div><span id="lCombo">連擊</span> <b id="combo">0</b></div></div>
     <div class="meter">
-      <div class="mlbl"><span>菸癮</span><b id="cpct">0%</b></div>
+      <div class="mlbl"><span id="lCrave">菸癮</span><b id="cpct">0%</b></div>
       <div class="bar" id="cbarWrap"><i id="cbar"></i></div>
     </div>
     <div class="goal" id="goal"><div class="track"><i id="gbar"></i></div></div>
@@ -142,7 +174,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-body);overflow:hi
 
   <main class="field" id="field">
     <div class="lungs" aria-hidden="true">
-      <svg viewBox="0 0 200 180" preserveAspectRatio="xMidYMid meet"><g fill="#e88a7c">
+      <svg viewBox="0 0 200 180" preserveAspectRatio="xMidYMid meet"><g id="lungFill" fill="#7a6250">
         <rect x="96" y="0" width="8" height="60" rx="4"/>
         <path d="M92 58 C70 40 30 50 18 100 C8 140 20 175 55 176 C85 177 92 150 92 120Z"/>
         <path d="M108 58 C130 40 170 50 182 100 C192 140 180 175 145 176 C115 177 108 150 108 120Z"/></g></svg>
@@ -152,125 +184,246 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-body);overflow:hi
       <ellipse cx="50" cy="34" rx="46" ry="20" fill="#f6f6f2" stroke="#2f6fd6" stroke-width="4"/>
       <path d="M30 18 Q50 46 70 18" fill="none" stroke="#2f6fd6" stroke-width="10" stroke-linecap="round"/>
     </svg>
+    <button class="mute" id="muteBtn" aria-label="聲音"></button>
   </main>
 
-  <footer class="ticker"><span class="tag">最新消息</span><span id="news">菸蟲在你肺裡開派對，拿起藍白拖。</span></footer>
+  <footer class="ticker"><span class="tag" id="lNews">最新消息</span><span id="news"></span></footer>
 </div>
 
 <div class="ov" id="startOv">
   <div class="card">
-    <h1>菸蟲<em>退散</em></h1>
-    <p class="lead">你肺裡住著一群菸蟲，每天勸你「再一根就好」。拿起藍白拖，撐到戒菸滿一年。</p>
+    <div class="langs" data-langs></div>
+    <h1 id="sTitle"></h1>
+    <p class="lead" id="sLead"></p>
     <ul class="rules" id="rules"></ul>
-    <button class="btn" id="startBtn">開始戒菸</button>
+    <button class="btn" id="startBtn"></button>
     <div class="best" id="bestStart"></div>
   </div>
 </div>
 
 <div class="ov" id="endOv" hidden>
   <div class="card">
-    <h1 id="endTitle">破戒了</h1>
+    <div class="langs" data-langs></div>
+    <h1 id="endTitle"></h1>
     <p class="lead" id="endLead"></p>
     <div class="result">
-      <div><small>戒菸天數</small><b id="rDays">0</b></div>
-      <div><small>拍死菸蟲</small><b id="rKills">0</b></div>
-      <div><small>省下</small><b id="rMoney">0</b></div>
+      <div><small id="lrD"></small><b id="rDays">0</b></div>
+      <div><small id="lrK"></small><b id="rKills">0</b></div>
+      <div><small id="lrM"></small><b id="rMoney">0</b></div>
     </div>
     <p class="quote" id="endQuote"></p>
     <div class="row">
-      <button class="btn ghost" id="copyBtn">複製戰績</button>
-      <button class="btn" id="againBtn">再戒一次</button>
+      <button class="btn ghost" id="copyBtn"></button>
+      <button class="btn" id="againBtn"></button>
     </div>
     <p class="note" id="shareText" hidden></p>
-    <p class="note">省下金額以一天一包 NT$125 計。健康里程碑為一般戒菸研究的常見數據，個人狀況不同。需要協助可撥免費戒菸專線 0800-636-363。</p>
+    <p class="note" id="endNote"></p>
   </div>
 </div>
 
 <script>
 (()=>{
-const GOAL=365, PACK=125;
+const GOAL=365, PACK=125, SITE='https://nosmokeagain.github.io/SmokeBug/';
 const $=id=>document.getElementById(id);
+const fmt=n=>'NT$'+n.toLocaleString('en-US');
 
-/* ---------- sprites ---------- */
+/* ================= i18n ================= */
+const I18N={
+zh:{
+ name:'菸蟲<em>退散</em>',lead:'你肺裡住著一群菸蟲，每天勸你「再一根就好」。拿起藍白拖，撐到戒菸滿一年。',
+ start:'開始戒菸',again:'再戒一次',best:n=>`最佳紀錄：戒菸 ${n} 天`,
+ dayPre:'戒菸第',dayPost:'天',saved:'省下',combo:'連擊',crave:'菸癮',news:'最新消息',
+ tick:d=>d+'天',year:'1年',plus:n=>`+${n}天`,craveUp:'菸癮↑',smokedF:'抽了一根',gumF:'菸癮 −20%',slap:'啪！',cough:'咳咳咳',
+ comboPop:n=>`${n} 連擊！`,temptLbl:'最後一根',gumLbl:'口香糖',
+ rules:[['拍菸蟲','戒菸天數增加，連擊 5 下以上有加成'],['老菸蟲','第 14 天後出現，要拍兩下'],['最後一根','千萬別碰，一碰菸癮暴增'],['口香糖','拍下去菸癮降低'],['菸癮滿 100%','菸蟲跑掉會讓菸癮上升，滿了就破戒']],
+ nIntro:'菸蟲在你肺裡開派對，拿起藍白拖。',nStart:'戒菸第一天。菸蟲們還不知道你是認真的。',nSmoked:'你抽了「最後一根」。菸蟲們集體鼓掌。',nGum:'嚼口香糖，嘴巴有事做，菸蟲閉嘴三秒。',
+ L:{bug:['飯後一根，快活似神仙','壓力這麼大，抽一根啦','戒菸？明天再戒啦','便利商店就在樓下喔','喝酒不抽菸，等於沒喝','一根而已又不會怎樣','你阿公抽到九十歲欸','上廁所不抽很無聊吧'],
+  elder:['我在你肺裡住十年了','房租都沒收，捨得趕我？','當年你第一根是我帶的','少年仔，不要衝動'],
+  tempt:['最後一根就好','今天辛苦了，獎勵自己','朋友遞的，不接不給面子','抽完這根就戒，真的'],
+  gum:['嚼我！'],ouch:['哎唷！','拖鞋犯規！','我還會回來的…','藍白拖太狠了','痛痛痛'],elderHit:['我還沒死','這點力道？','骨頭硬啦'],
+  escape:['菸蟲溜走了，菸癮上升','菸蟲在你腦中喊「來一根」','有一隻跑去便利商店排隊了','菸蟲成功說服你的手指發癢'],
+  refuse:['你看著「最後一根」，然後走開了','誘惑自動熄滅，你忍住了','朋友收回香菸，你保住面子跟肺']},
+ MS:[['戒菸 24 小時','血中一氧化碳回到正常。菸蟲開始覺得房租變貴了。'],['戒菸 3 天','尼古丁大致排出體外。接下來菸蟲會特別吵，正常現象。'],['戒菸 2 週','血液循環開始改善，爬樓梯比較不喘。老菸蟲坐不住了。'],['戒菸 1 個月','咳嗽和呼吸短促逐漸減少。已經省下 NT$3,750。'],['戒菸 3 個月','肺功能明顯提升。菸蟲開始互相推卸責任。'],['戒菸半年','省下 NT$22,500，夠換一支新手機。']],
+ rD:'戒菸天數',rK:'拍死菸蟲',rM:'省下',copy:'複製戰績',copied:'已複製',hold:'請長按複製',
+ winT:['鋼鐵肺','戒菸成功','險勝'],winLead:s=>`撐滿一年。冠心病風險約降到吸菸者的一半，省下 ${fmt(GOAL*PACK)}。`+(s?`途中破功 ${s} 次，不過還是撐住了。`:'一根都沒碰。'),
+ winQ:'……好啦，我們搬去隔壁那位的肺了。',winWho:'菸蟲代表，打包中',loseT:'破戒了',
+ loseLead:d=>d<3?`第 ${d} 天就失守，戒斷期最難熬，不意外。`:d<30?`第 ${d} 天在便利商店門口失守。`:d<180?`撐了 ${d} 天，比上次多嗎？`:`都撐到第 ${d} 天了，不甘心吧。`,
+ loseQ:d=>d<30?'我就說你戒不掉。':d<180?'其實我差點就要搬家了。':'嚇死，差一點點就被趕走。',loseWho:'你肺裡的菸蟲',
+ share:(w,d,k)=>w?`我在《菸蟲退散》戒菸滿一年，拍死 ${k} 隻菸蟲，省下 ${fmt(GOAL*PACK)}。你撐得過幾天？`:`我在《菸蟲退散》戒菸第 ${d} 天破功，拍死 ${k} 隻菸蟲。你撐得過幾天？`,
+ note:'省下金額以一天一包 NT$125 計。健康里程碑為一般戒菸研究的常見數據，個人狀況不同。\n免費戒菸專線 0800-636-363',
+ sound:'聲音'
+},
+tw:{
+ name:'菸蟲<em>退散</em>',lead:'你的肺內底蹛一陣菸蟲，逐工共你講「閣一支就好」。提起藍白拖，撐到戒薰滿一冬。',
+ start:'開始戒薰',again:'閣戒一擺',best:n=>`上好紀錄：戒薰 ${n} 工`,
+ dayPre:'戒薰第',dayPost:'工',saved:'儉',combo:'連拍',crave:'薰癮',news:'新消息',
+ tick:d=>d+'工',year:'1冬',plus:n=>`+${n}工`,craveUp:'薰癮↑',smokedF:'食一支矣',gumF:'薰癮 −20%',slap:'啪！',cough:'咳咳咳',
+ comboPop:n=>`${n} 連拍！`,temptLbl:'上尾一支',gumLbl:'樹奶糖',
+ rules:[['拍菸蟲','戒薰的工數會加，連拍五下以上閣有加'],['老菸蟲','第十四工了後出現，愛拍兩下'],['上尾一支','千萬莫摸，一下摸著薰癮衝懸'],['樹奶糖','拍落去薰癮會降'],['薰癮滿 100%','菸蟲走去薰癮會起來，滿矣就破功']],
+ nIntro:'菸蟲佇你的肺內底開派對，提起藍白拖。',nStart:'戒薰第一工。菸蟲猶毋知你是認真的。',nSmoked:'你食「上尾一支」矣。菸蟲攏咧拍噗仔。',nGum:'咬樹奶糖，喙有代誌做，菸蟲恬三秒。',
+ L:{bug:['食飽閣來一支，快活似神仙','壓力遮爾大，食一支啦','明仔載才閣戒啦','便利商店就佇樓跤','一支爾爾，袂按怎啦','恁阿公食甲九十歲','啉酒無食薰，等於無啉','放屎無食薰真無聊乎'],
+  elder:['我佇你的肺蹛十冬矣','厝稅攏無收，你甘有法度趕我？','你頭一支是我紹介的','少年仔，莫衝碰'],
+  tempt:['上尾一支就好','今仔日辛苦矣，獎勵家己','朋友請的，毋食歹勢','食了這支就戒，真的'],
+  gum:['咬我！'],ouch:['哎唷喂！','藍白拖犯規！','我閣會轉來！','傷粗殘矣','疼疼疼'],elderHit:['我猶未死','按呢爾爾？','骨頭真硬'],
+  escape:['菸蟲走去矣，薰癮起來','菸蟲佇你頭殼內喝「來一支」','有一隻走去便利商店排隊','菸蟲共你的手指頭仔講伊咧癢'],
+  refuse:['你看「上尾一支」一下，就行開矣','誘惑家己化去，你有忍牢','朋友共薰收轉去，你面子佮肺攏顧著']},
+ MS:[['戒薰一工','血內底的一氧化碳轉來正常。菸蟲開始感覺厝稅傷貴。'],['戒薰三工','尼古丁差不多攏排出去矣。菸蟲這陣上蓋吵，正常的。'],['戒薰兩禮拜','血路較順，蹈樓梯較袂喘。老菸蟲坐袂牢矣。'],['戒薰一個月','嗽佮喘慢慢減少。已經儉 NT$3,750。'],['戒薰三個月','肺功能明顯變好。菸蟲開始相推卸責任。'],['戒薰半冬','儉 NT$22,500，有夠換一支新手機仔。']],
+ rD:'戒薰工數',rK:'拍死菸蟲',rM:'儉落來',copy:'複製戰績',copied:'複製好矣',hold:'請長捺複製',
+ winT:['鐵肺','戒薰成功','險險仔贏'],winLead:s=>`拚一冬矣。心臟病的風險差不多降到食薰人的一半，儉 ${fmt(GOAL*PACK)}。`+(s?`中途破功 ${s} 擺，毋過猶是有撐牢。`:'一支都無摸。'),
+ winQ:'……好啦，阮搬去隔壁彼个的肺。',winWho:'菸蟲代表，咧款行李',loseT:'破功矣',
+ loseLead:d=>d<3?`第 ${d} 工就落軟，戒斷期上艱苦，袂奇怪。`:d<30?`第 ${d} 工佇便利商店門口失守。`:d<180?`撐 ${d} 工，有比頂擺較濟無？`:`都撐到第 ${d} 工矣，毋甘願乎。`,
+ loseQ:d=>d<30?'我就講你戒袂去。':d<180?'其實阮險仔就欲搬厝矣。':'驚死人，差一屑仔就予你趕出去。',loseWho:'你肺內的菸蟲',
+ share:(w,d,k)=>w?`我佇《菸蟲退散》戒薰滿一冬，拍死 ${k} 隻菸蟲，儉 ${fmt(GOAL*PACK)}。你撐會過幾工？`:`我佇《菸蟲退散》戒薰第 ${d} 工破功，拍死 ${k} 隻菸蟲。你撐會過幾工？`,
+ note:'儉的錢照一工一包 NT$125 算。健康里程碑是一般戒薰研究的數據，逐个人無仝款。\n免費戒菸專線 0800-636-363',
+ sound:'聲音'
+},
+en:{
+ name:'Smoke Bugs<br><em>Begone</em>',lead:'A gang of smoke bugs lives in your lungs, whispering "just one more." Grab your slipper and last a full year.',
+ start:'Start Quitting',again:'Try Again',best:n=>`Best: ${n} days smoke-free`,
+ dayPre:'Day',dayPost:'smoke-free',saved:'Saved',combo:'Combo',crave:'Craving',news:'NEWS',
+ tick:d=>d+'d',year:'1y',plus:n=>`+${n}d`,craveUp:'Craving↑',smokedF:'Smoked one',gumF:'Craving −20%',slap:'SLAP!',cough:'*cough*',
+ comboPop:n=>`${n} COMBO!`,temptLbl:'LAST ONE',gumLbl:'GUM',
+ rules:[['Smoke Bug','Slap it to add quit days. A 5+ combo gives a bonus'],['Old Bug','Shows up after day 14. Takes two slaps'],['"Last One"','Never touch it. Your craving spikes'],['Gum','Slap it to lower your craving'],['Craving 100%','Escaped bugs raise your craving. Full means you relapse']],
+ nIntro:'The smoke bugs are partying in your lungs. Grab your slipper.',nStart:'Day one. The bugs don\'t know you\'re serious yet.',nSmoked:'You smoked the "last one." The bugs applaud.',nGum:'Chewing gum. Mouth busy. The bugs shut up for three seconds.',
+ L:{bug:['Just one after dinner','Stressed? Have one','Quit tomorrow, bro','Store\'s right downstairs','One won\'t kill you','Grandpa smoked till 90','Beer without a smoke? Lame','Bathroom break needs a smoke'],
+  elder:['I\'ve lived here ten years','No rent and you evict me?','I gave you your first one','Easy there, kid'],
+  tempt:['Just the last one','You earned it today','A friend offered. Be polite','Last one, then I quit. Really'],
+  gum:['Chew me!'],ouch:['Ouch!','Slipper is cheating!','I\'ll be back…','Too harsh!','Ow ow ow'],elderHit:['Not dead yet','That all you got?','Tough old bones'],
+  escape:['A bug escaped. Craving up','A bug yells "just one" in your head','A bug went to buy a pack','A bug convinced your fingers to itch'],
+  refuse:['You looked at the "last one" and walked away','Temptation burned out. You held on','Your friend took the smoke back. Lungs saved']},
+ MS:[['24 hours','Carbon monoxide in your blood is back to normal. The bugs think rent just went up.'],['Day 3','Nicotine is mostly out of your body. The bugs get loud now. That\'s normal.'],['2 weeks','Circulation improves. Stairs feel easier. The old bugs are nervous.'],['1 month','Less coughing and shortness of breath. NT$3,750 saved.'],['3 months','Lung function clearly better. The bugs start blaming each other.'],['6 months','NT$22,500 saved. That\'s a new phone.']],
+ rD:'Days',rK:'Bugs slapped',rM:'Saved',copy:'Copy Score',copied:'Copied',hold:'Long-press to copy',
+ winT:['Iron Lungs','Quit for Good','Close Call'],winLead:s=>`One full year. Your heart disease risk is about half a smoker's. You saved ${fmt(GOAL*PACK)}.`+(s?` You slipped ${s} time${s>1?'s':''} but held on.`:' Not a single puff.'),
+ winQ:'…Fine. We\'re moving into the next guy\'s lungs.',winWho:'Bug spokesperson, packing',loseT:'Relapsed',
+ loseLead:d=>d<3?`Day ${d}. Withdrawal is the hardest part. No surprise.`:d<30?`Lost it on day ${d} outside a convenience store.`:d<180?`You lasted ${d} days. Better than last time?`:`Day ${d}. That close. Annoyed yet?`,
+ loseQ:d=>d<30?'Told you you couldn\'t quit.':d<180?'We almost had to move out.':'Phew. That was close.',loseWho:'The bugs in your lungs',
+ share:(w,d,k)=>w?`I quit smoking for a full year in Smoke Bugs, slapped ${k} bugs and saved ${fmt(GOAL*PACK)}. How long can you last?`:`I relapsed on day ${d} in Smoke Bugs after slapping ${k} bugs. How long can you last?`,
+ note:'Savings assume one pack a day at NT$125. Health milestones are common figures from quit-smoking research; individual results vary.\nTaiwan free quitline 0800-636-363',
+ sound:'Sound'
+}};
+let lang='zh';
+try{lang=localStorage.getItem('smokebug_lang')||((navigator.language||'').toLowerCase().startsWith('zh')?'zh':'en')}catch(e){}
+if(!I18N[lang])lang='zh';
+const T=()=>I18N[lang];
+
+/* ================= sprites ================= */
 const eyes=(y,angry)=>`<circle cx="40" cy="${y}" r="7" fill="#fff"/><circle cx="60" cy="${y}" r="7" fill="#fff"/>
 <circle cx="42" cy="${y+1}" r="3.2" fill="#111"/><circle cx="58" cy="${y+1}" r="3.2" fill="#111"/>
 ${angry?`<path d="M31 ${y-11} L47 ${y-6} M69 ${y-11} L53 ${y-6}" stroke="#3a1d00" stroke-width="3.5" stroke-linecap="round"/>`:''}`;
+const fit=(s,max)=>Math.min(max,Math.floor(56/Math.max(1,[...s].length*(/[一-鿿]/.test(s)?1:.6))));
 const SPR={
-bug:`<svg viewBox="0 0 100 110"><path class="smoke" d="M58 14 q9 -7 1 -14 q-8 -7 2 -14" fill="none" stroke="#cfd8d6" stroke-width="3" stroke-linecap="round" opacity=".8"/>
-<rect x="28" y="18" width="44" height="100" rx="22" fill="#f3efe6"/>
-<path d="M28 70h44M28 86h44M28 102h44" stroke="#d7d0c2" stroke-width="2"/>
-<rect x="28" y="18" width="44" height="40" rx="22" fill="#e8a33d"/>
-<circle cx="36" cy="26" r="2" fill="#c27e1c"/><circle cx="64" cy="30" r="2" fill="#c27e1c"/><circle cx="52" cy="22" r="1.6" fill="#c27e1c"/>
+bug:()=>`<svg viewBox="0 0 100 110"><path class="smoke" d="M58 14 q9 -7 1 -14 q-8 -7 2 -14" fill="none" stroke="#cfd8d6" stroke-width="3" stroke-linecap="round" opacity=".8"/>
+<rect x="28" y="18" width="44" height="100" rx="22" fill="#f3efe6"/><path d="M28 70h44M28 86h44M28 102h44" stroke="#d7d0c2" stroke-width="2"/>
+<rect x="28" y="18" width="44" height="40" rx="22" fill="#e8a33d"/><circle cx="36" cy="26" r="2" fill="#c27e1c"/><circle cx="64" cy="30" r="2" fill="#c27e1c"/><circle cx="52" cy="22" r="1.6" fill="#c27e1c"/>
 ${eyes(40,true)}<path d="M41 54 q9 6 18 0" stroke="#3a1d00" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`,
-elder:`<svg viewBox="0 0 100 110"><path class="smoke" d="M60 10 q10 -7 1 -14 q-8 -7 2 -14 M44 12 q-8 -6 0 -12" fill="none" stroke="#cfd8d6" stroke-width="3" stroke-linecap="round" opacity=".8"/>
-<rect x="24" y="14" width="52" height="104" rx="26" fill="#a9a59c"/>
-<path d="M24 72h52M24 90h52" stroke="#8a867d" stroke-width="2"/>
-<rect x="24" y="14" width="52" height="44" rx="26" fill="#9a6a2a"/>
-<path d="M30 24 q20 -8 40 0" stroke="#e9f0ea" stroke-width="3" fill="none"/>
+elder:()=>`<svg viewBox="0 0 100 110"><path class="smoke" d="M60 10 q10 -7 1 -14 q-8 -7 2 -14 M44 12 q-8 -6 0 -12" fill="none" stroke="#cfd8d6" stroke-width="3" stroke-linecap="round" opacity=".8"/>
+<rect x="24" y="14" width="52" height="104" rx="26" fill="#a9a59c"/><path d="M24 72h52M24 90h52" stroke="#8a867d" stroke-width="2"/>
+<rect x="24" y="14" width="52" height="44" rx="26" fill="#9a6a2a"/><path d="M30 24 q20 -8 40 0" stroke="#e9f0ea" stroke-width="3" fill="none"/>
 ${eyes(40,false)}<circle cx="40" cy="40" r="9" fill="none" stroke="#111" stroke-width="2.5"/><circle cx="60" cy="40" r="9" fill="none" stroke="#111" stroke-width="2.5"/><path d="M49 40h2" stroke="#111" stroke-width="2.5"/>
 <path d="M36 54 q7 -5 14 0 q7 -5 14 0" stroke="#f3efe6" stroke-width="5" fill="none" stroke-linecap="round"/>
-<text x="50" y="96" text-anchor="middle" font-family="Huninn,sans-serif" font-size="18" fill="#2a2a2a">老</text></svg>`,
-tempt:`<svg viewBox="0 0 100 110"><path class="smoke" d="M50 4 q8 -6 0 -12 q-8 -6 1 -12" fill="none" stroke="#e9f0ea" stroke-width="3" stroke-linecap="round"/>
+<text x="50" y="96" text-anchor="middle" font-family="Huninn,sans-serif" font-size="18" fill="#2a2a2a">${lang==='en'?'OG':'老'}</text></svg>`,
+tempt:()=>{const s=T().temptLbl;return`<svg viewBox="0 0 100 110"><path class="smoke" d="M50 4 q8 -6 0 -12 q-8 -6 1 -12" fill="none" stroke="#e9f0ea" stroke-width="3" stroke-linecap="round"/>
 <rect x="44" y="8" width="12" height="54" rx="2" fill="#f3efe6"/><rect x="44" y="8" width="12" height="6" fill="#ff7a3a"/><circle cx="50" cy="8" r="4" fill="#ffb347"/>
-<rect x="44" y="48" width="12" height="14" fill="#e8a33d"/>
-<rect x="20" y="52" width="60" height="58" rx="5" fill="#c43a31"/><rect x="20" y="52" width="60" height="12" fill="#f3efe6"/>
-<text x="50" y="92" text-anchor="middle" font-family="Huninn,sans-serif" font-size="14" fill="#f3efe6">最後一根</text></svg>`,
-gum:`<svg viewBox="0 0 100 110"><rect x="18" y="30" width="64" height="80" rx="10" fill="#2fa36b"/><rect x="18" y="30" width="64" height="18" rx="9" fill="#b9efcf"/>
+<rect x="44" y="48" width="12" height="14" fill="#e8a33d"/><rect x="20" y="52" width="60" height="58" rx="5" fill="#c43a31"/><rect x="20" y="52" width="60" height="12" fill="#f3efe6"/>
+<text x="50" y="92" text-anchor="middle" font-family="Huninn,sans-serif" font-size="${fit(s,14)}" fill="#f3efe6">${s}</text></svg>`},
+gum:()=>{const s=T().gumLbl;return`<svg viewBox="0 0 100 110"><rect x="18" y="30" width="64" height="80" rx="10" fill="#2fa36b"/><rect x="18" y="30" width="64" height="18" rx="9" fill="#b9efcf"/>
 <path d="M50 56 q14 4 10 20 q-14 -2 -10 -20z" fill="#b9efcf"/>
-<text x="50" y="100" text-anchor="middle" font-family="Huninn,sans-serif" font-size="15" fill="#fff">口香糖</text></svg>`
+<text x="50" y="100" text-anchor="middle" font-family="Huninn,sans-serif" font-size="${fit(s,15)}" fill="#fff">${s}</text></svg>`},
+warn:()=>`<svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" fill="none" stroke="#ff5b4f" stroke-width="4"/><path d="M22 12v12" stroke="#ff5b4f" stroke-width="4" stroke-linecap="round"/><circle cx="22" cy="31" r="2.5" fill="#ff5b4f"/></svg>`
 };
-$('rules').innerHTML=[
- ['bug','拍菸蟲','戒菸天數增加，連擊 5 下以上有加成'],
- ['elder','老菸蟲','第 14 天後出現，要拍兩下'],
- ['tempt','最後一根','千萬別碰，一碰菸癮暴增'],
- ['gum','口香糖','拍下去菸癮降低']
-].map(([k,b,s])=>`<li>${SPR[k]}<div><b>${b}</b><br><span>${s}</span></div></li>`).join('')+
- `<li><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" fill="none" stroke="#ff5b4f" stroke-width="4"/><path d="M22 12v12" stroke="#ff5b4f" stroke-width="4" stroke-linecap="round"/><circle cx="22" cy="31" r="2.5" fill="#ff5b4f"/></svg><div><b>菸癮滿 100%</b><br><span>菸蟲跑掉會讓菸癮上升，滿了就破戒</span></div></li>`;
+const ICON_ON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/></svg>';
+const ICON_OFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
 
-/* ---------- lines ---------- */
-const L={
- bug:["飯後一根，快活似神仙","壓力這麼大，抽一根啦","戒菸？明天再戒啦","便利商店就在樓下喔","喝酒不抽菸，等於沒喝","一根而已又不會怎樣","你阿公抽到九十歲欸","上廁所不抽很無聊吧"],
- elder:["我在你肺裡住十年了","房租都沒收，捨得趕我？","當年你第一根是我帶的","少年仔，不要衝動"],
- tempt:["最後一根就好","今天辛苦了，獎勵自己","朋友遞的，不接不給面子","抽完這根就戒，真的"],
- gum:["嚼我！"],
- ouch:["哎唷！","拖鞋犯規！","我還會回來的…","藍白拖太狠了","痛痛痛"],
- elderHit:["我還沒死","這點力道？","骨頭硬啦"],
- escape:["菸蟲溜走了，菸癮上升","菸蟲在你腦中喊「來一根」","有一隻跑去便利商店排隊了","菸蟲成功說服你的手指發癢"],
- refuse:["你看著「最後一根」，然後走開了","誘惑自動熄滅，你忍住了","朋友收回香菸，你保住面子跟肺"]
-};
-const pick=a=>a[Math.random()*a.length|0];
-
-/* ---------- milestones ---------- */
-const MS=[
- {d:1,  t:"戒菸 24 小時",m:"血中一氧化碳回到正常值。菸蟲開始覺得房租變貴了。"},
- {d:3,  t:"戒菸 3 天",  m:"尼古丁大致排出體外。接下來菸蟲會特別吵，正常現象。"},
- {d:14, t:"戒菸 2 週",  m:"血液循環開始改善，爬樓梯比較不喘。老菸蟲坐不住了。"},
- {d:30, t:"戒菸 1 個月",m:"咳嗽和呼吸短促逐漸減少。已經省下 NT$3,750。"},
- {d:90, t:"戒菸 3 個月",m:"肺功能明顯提升。菸蟲開始互相推卸責任。"},
- {d:180,t:"戒菸半年",  m:"省下 NT$22,500，夠換一支新手機。"},
-];
-const goal=$('goal');
-[...MS.map(m=>m.d).filter(d=>d>=14),GOAL].forEach(d=>{
-  const s=document.createElement('span');s.className='tick';s.dataset.d=d;
-  s.style.left=(d/GOAL*100)+'%';s.textContent=d===GOAL?'1年':d+'天';goal.appendChild(s);
-});
-
-/* ---------- audio ---------- */
-let ac=null;
-function tone(f,dur,type='square',vol=.06,slide=0){
-  if(!ac)return;try{const o=ac.createOscillator(),g=ac.createGain(),t=ac.currentTime;
-  o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+dur);
-  g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g).connect(ac.destination);o.start(t);o.stop(t+dur);}catch(e){}
+/* ================= audio ================= */
+let ac=null,master=null,bgmG=null,sfxG=null,noiseBuf=null,muted=false,unlockEl=null;
+try{muted=localStorage.getItem('smokebug_mute')==='1'}catch(e){}
+function silentWavURL(){
+  const n=4000,b=new ArrayBuffer(44+n),v=new DataView(b);let o=0;
+  const s=t=>{for(const c of t)v.setUint8(o++,c.charCodeAt(0))},u32=x=>{v.setUint32(o,x,true);o+=4},u16=x=>{v.setUint16(o,x,true);o+=2};
+  s('RIFF');u32(36+n);s('WAVE');s('fmt ');u32(16);u16(1);u16(1);u32(8000);u32(8000);u16(1);u16(8);s('data');u32(n);
+  for(let i=0;i<n;i++)v.setUint8(o++,128);
+  return URL.createObjectURL(new Blob([b],{type:'audio/wav'}));
 }
-const sfx={slap:()=>{tone(180,.08,'square',.08,60)},kill:()=>{tone(520,.08,'triangle',.07,900)},
- bad:()=>{tone(220,.35,'sawtooth',.06,90)},gum:()=>{tone(660,.12,'sine',.08,1000)},ms:()=>{[523,659,784].forEach((f,i)=>setTimeout(()=>tone(f,.15,'triangle',.07),i*90))}};
+function initAudio(){
+  try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}
+  try{if(!unlockEl){unlockEl=new Audio(silentWavURL());unlockEl.loop=true;unlockEl.setAttribute('playsinline','')}
+    unlockEl.play().catch(()=>{})}catch(e){}
+  if(ac){ac.resume&&ac.resume();return}
+  try{
+    ac=new (window.AudioContext||window.webkitAudioContext)();
+    master=ac.createGain();master.gain.value=muted?0:1;master.connect(ac.destination);
+    bgmG=ac.createGain();bgmG.gain.value=.5;bgmG.connect(master);
+    sfxG=ac.createGain();sfxG.gain.value=1;sfxG.connect(master);
+    noiseBuf=ac.createBuffer(1,ac.sampleRate*.4,ac.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+  }catch(e){ac=null}
+}
+function tone(f,dur,type='square',vol=.08,slide=0,at=0,dest){
+  if(!ac)return;const t=at||ac.currentTime;
+  const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.setValueAtTime(f,t);
+  if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+dur);
+  g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g).connect(dest||sfxG);o.start(t);o.stop(t+dur+.02);
+}
+function noise(dur,vol=.15,freq=1200,at=0,dest,type='bandpass'){
+  if(!ac)return;const t=at||ac.currentTime;
+  const s=ac.createBufferSource(),f=ac.createBiquadFilter(),g=ac.createGain();s.buffer=noiseBuf;
+  f.type=type;f.frequency.value=freq;g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  s.connect(f).connect(g).connect(dest||sfxG);s.start(t);s.stop(t+dur+.02);
+}
+const mtof=m=>440*Math.pow(2,(m-69)/12);
+const sfx={
+ slap(){noise(.09,.5,900);tone(140,.07,'square',.12,50)},
+ kill(){tone(500,.07,'square',.07,1000);tone(750,.1,'triangle',.06,1500,ac&&ac.currentTime+.05)},
+ elderHit(){tone(160,.12,'square',.1,90)},
+ bad(){tone(300,.5,'sawtooth',.07,70);noise(.6,.12,500,0,null,'lowpass')},
+ gum(){[0,.06,.12].forEach((d,i)=>tone(700+i*200,.09,'sine',.09,0,ac&&ac.currentTime+d))},
+ escape(){tone(900,.18,'triangle',.05,300)},
+ ms(){if(!ac)return;[72,76,79,84].forEach((m,i)=>tone(mtof(m),.18,'square',.05,0,ac.currentTime+i*.09))},
+ combo(){if(!ac)return;[79,83,86].forEach((m,i)=>tone(mtof(m),.1,'square',.05,0,ac.currentTime+i*.06))},
+ win(){if(!ac)return;[60,64,67,72,67,72,76,79].forEach((m,i)=>tone(mtof(m),.22,'square',.06,0,ac.currentTime+i*.12))},
+ lose(){if(!ac)return;[67,63,60,55].forEach((m,i)=>tone(mtof(m),.32,'sawtooth',.06,0,ac.currentTime+i*.22))}
+};
+/* bug voices: babble one blip per character */
+const VOICE={bug:[520,'square'],elder:[200,'sawtooth'],tempt:[340,'triangle'],gum:[800,'sine'],ouch:[650,'square']};
+function babble(text,kind){
+  if(!ac)return;const [base,type]=VOICE[kind]||VOICE.bug;
+  const n=Math.min(9,[...text].length);let t=ac.currentTime+.02;
+  for(let i=0;i<n;i++){const f=base*(0.85+Math.random()*.45);tone(f,.05,type,.035,f*(Math.random()<.5?.8:1.25),t);t+=.058}
+}
+/* BGM sequencer */
+const BASS=[45,0,57,45,48,0,60,48,41,0,53,41,40,0,52,44];
+const LEAD=[69,0,72,0,76,74,72,0,69,0,65,67,68,0,71,0];
+const LEAD2=[76,0,74,72,74,0,76,0,77,76,74,0,71,0,68,0];
+let seq=null,step=0,nextT=0,bar=0;
+function bgmStart(){
+  if(!ac||seq)return;step=0;bar=0;nextT=ac.currentTime+.05;
+  seq=setInterval(()=>{
+    const p=prog(),bpm=128+44*p,dt=60/bpm/4;
+    while(nextT<ac.currentTime+.12){
+      const b=BASS[step],l=(bar%2?LEAD2:LEAD)[step];
+      if(b)tone(mtof(b),dt*1.6,'square',.035,0,nextT,bgmG);
+      if(l)tone(mtof(l),dt*1.3,'triangle',.05,0,nextT,bgmG);
+      if(step%4===0)tone(110,.09,'sine',.12,40,nextT,bgmG);
+      if(step%2===1)noise(.03,.04,7000,nextT,bgmG,'highpass');
+      if(S.crave>70&&step%8===4)tone(mtof(84),.05,'square',.03,0,nextT,bgmG);
+      nextT+=dt;step=(step+1)%16;if(!step)bar++;
+    }
+  },25);
+}
+function bgmStop(){clearInterval(seq);seq=null}
+function setMute(m){muted=m;try{localStorage.setItem('smokebug_mute',m?'1':'0')}catch(e){}
+  if(master)master.gain.setTargetAtTime(m?0:1,ac.currentTime,.02);
+  $('muteBtn').innerHTML=m?ICON_OFF:ICON_ON;$('muteBtn').setAttribute('aria-pressed',m?'true':'false')}
+function buzz(ms){try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
 
-/* ---------- state ---------- */
-const grid=$('grid'), field=$('field'), slipper=$('slipper');
+/* ================= board ================= */
+const grid=$('grid'),field=$('field'),slipper=$('slipper'),goal=$('goal');
 let best=0;try{best=+localStorage.getItem('smokebug_best')||0}catch(e){}
+const MSD=[1,3,14,30,90,180];
+[14,30,90,180,GOAL].forEach(d=>{const s=document.createElement('span');s.className='tick';s.dataset.d=d;s.style.left=(d/GOAL*100)+'%';goal.appendChild(s)});
 const holes=[];
 for(let i=0;i<9;i++){
-  const b=document.createElement('button');b.className='hole';b.id='hole'+i;b.setAttribute('aria-label','肺泡 '+(i+1));
+  const b=document.createElement('button');b.className='hole';b.id='hole'+i;b.setAttribute('aria-label','#'+(i+1));
   b.innerHTML='<div class="pit"></div><div class="mask"><div class="critter"></div></div><div class="bubble"></div>';
   grid.appendChild(b);
   const h={el:b,cr:b.querySelector('.critter'),bb:b.querySelector('.bubble'),type:null,hp:0,t:null,lock:0,bt:null};
@@ -279,39 +432,42 @@ for(let i=0;i<9;i++){
   holes.push(h);
 }
 let S={};
-function reset(){S={run:false,days:0,crave:0,combo:0,kills:0,refused:0,smoked:0,msi:0,last:0,spawnT:null};}
+function reset(){S={run:false,days:0,crave:0,combo:0,kills:0,refused:0,smoked:0,msi:0,last:0,spawnT:null}}
 reset();
+const pick=a=>a[Math.random()*a.length|0];
+function prog(){return Math.min(S.days/GOAL,1)}
 
-function say(h,txt,ms=900){h.bb.textContent=txt;h.bb.classList.add('on');clearTimeout(h.bt);h.bt=setTimeout(()=>h.bb.classList.remove('on'),ms)}
+/* ================= fx ================= */
+function rel(h,fx=.5,fy=.4){const r=h.el.getBoundingClientRect(),f=field.getBoundingClientRect();return[r.left-f.left+r.width*fx,r.top-f.top+r.height*fy,r.width]}
+function fx(cls,html,x,y,life){const d=document.createElement('div');d.className='fx '+cls;d.innerHTML=html;if(x!=null){d.style.left=x+'px';d.style.top=y+'px'}field.appendChild(d);setTimeout(()=>d.remove(),life);return d}
+function say(h,txt,kind,ms=1000){h.bb.textContent=txt;h.bb.classList.add('on');clearTimeout(h.bt);h.bt=setTimeout(()=>h.bb.classList.remove('on'),ms);babble(txt,kind)}
 function news(t){$('news').textContent=t}
-function floatAt(h,txt,cls){
-  const r=h.el.getBoundingClientRect(),f=field.getBoundingClientRect();
-  const d=document.createElement('div');d.className='float '+cls;d.textContent=txt;
-  d.style.left=(r.left-f.left+r.width/2)+'px';d.style.top=(r.top-f.top+r.height*.1)+'px';
-  field.appendChild(d);setTimeout(()=>d.remove(),820);
+function floatAt(h,txt,cls){const[x,y]=rel(h,.5,.1);fx('float '+cls,txt,x,y,820)}
+function particles(h,colors,n=10){
+  const[x,y,w]=rel(h,.5,.55);
+  for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,r=w*(.35+Math.random()*.45);
+    const p=fx('pt','',x,y,600);p.style.background=pick(colors);p.style.setProperty('--dx',Math.cos(a)*r+'px');p.style.setProperty('--dy',Math.sin(a)*r-w*.2+'px')}
 }
 function slap(h){
-  const r=h.el.getBoundingClientRect(),f=field.getBoundingClientRect();
-  slipper.style.left=(r.left-f.left+r.width*.25)+'px';slipper.style.top=(r.top-f.top+r.height*.05)+'px';
+  const[x,y]=rel(h,.25,.05);slipper.style.left=x+'px';slipper.style.top=y+'px';
   slipper.classList.remove('go');void slipper.offsetWidth;slipper.classList.add('go');
 }
+function shakeField(){field.classList.remove('shake');void field.offsetWidth;field.classList.add('shake')}
+function lerpHex(a,b,t){const p=x=>[1,3,5].map(i=>parseInt(x.slice(i,i+2),16));const A=p(a),B=p(b);return'#'+A.map((v,i)=>Math.round(v+(B[i]-v)*t).toString(16).padStart(2,'0')).join('')}
 
-/* ---------- spawn ---------- */
-function prog(){return Math.min(S.days/GOAL,1)}
+/* ================= game ================= */
 function chooseType(){
   const r=Math.random(),p=prog();
-  const wTempt=.15+.08*p, wGum=.08, wElder=S.days>=14?.14+.08*p:0;
-  if(r<wTempt)return'tempt';if(r<wTempt+wGum)return'gum';if(r<wTempt+wGum+wElder)return'elder';return'bug';
+  const wT=.15+.08*p,wG=.08,wE=S.days>=14?.14+.08*p:0;
+  if(r<wT)return'tempt';if(r<wT+wG)return'gum';if(r<wT+wG+wE)return'elder';return'bug';
 }
 function spawn(){
-  const now=performance.now();
-  const free=holes.filter(h=>!h.type&&now>h.lock);if(!free.length)return;
+  const now=performance.now(),free=holes.filter(h=>!h.type&&now>h.lock);if(!free.length)return;
   const h=pick(free),type=chooseType();
-  h.type=type;h.hp=type==='elder'?2:1;
-  h.el.classList.toggle('tempt',type==='tempt');
-  h.cr.className='critter';h.cr.innerHTML=SPR[type];
-  void h.cr.offsetWidth;h.cr.classList.add('up');
-  if(type!=='gum'||Math.random()<.5){if(Math.random()<.55||type==='tempt')say(h,pick(L[type]),1100)}
+  h.type=type;h.hp=type==='elder'?2:1;h.el.classList.toggle('tempt',type==='tempt');
+  h.cr.className='critter';h.cr.innerHTML=SPR[type]();void h.cr.offsetWidth;h.cr.classList.add('up');if(type==='tempt')h.cr.classList.add('tempt');
+  tone(type==='elder'?180:type==='tempt'?260:420,.06,'triangle',.03,type==='gum'?900:600);
+  if(type==='tempt'||Math.random()<.5)say(h,pick(T().L[type]),type,1100);
   const p=prog();let stay=1500-620*p;if(type==='tempt')stay+=500;if(type==='gum')stay-=200;if(type==='elder')stay+=350;
   h.t=setTimeout(()=>expire(h),stay);
 }
@@ -320,52 +476,48 @@ function schedule(){
   const p=prog();if(p>.35&&Math.random()<.3+.3*p)setTimeout(()=>S.run&&spawn(),120);
   S.spawnT=setTimeout(schedule,900-430*p+Math.random()*200);
 }
-function down(h,cls){
-  clearTimeout(h.t);h.type=null;h.el.classList.remove('tempt');
-  if(cls){h.cr.classList.add(cls);}else{h.cr.classList.remove('up');}
-  h.lock=performance.now()+260;
-}
+function down(h,cls){clearTimeout(h.t);h.type=null;h.el.classList.remove('tempt');
+  if(cls){h.cr.classList.remove('up');h.cr.classList.add(cls)}else h.cr.classList.remove('up','tempt');h.lock=performance.now()+260}
 function expire(h){
-  if(!S.run||!h.type)return;
-  const t=h.type;down(h);
-  if(t==='bug'||t==='elder'){S.crave+=t==='elder'?16:11;S.combo=0;news(pick(L.escape));floatAt(h,'菸癮↑','bad')}
-  else if(t==='tempt'){S.refused++;news(pick(L.refuse))}
+  if(!S.run||!h.type)return;const t=h.type;down(h);
+  if(t==='bug'||t==='elder'){S.crave+=t==='elder'?16:11;S.combo=0;news(pick(T().L.escape));floatAt(h,T().craveUp,'bad');sfx.escape()}
+  else if(t==='tempt'){S.refused++;news(pick(T().L.refuse))}
   render();
 }
-
-/* ---------- hit ---------- */
 function hit(h){
   if(!S.run)return;slap(h);sfx.slap();
-  if(!h.type){return}
+  const[x,y]=rel(h,.5,.35);
+  if(!h.type){fx('bam',T().slap,x,y,360);return}
   const t=h.type;
   if(t==='bug'||t==='elder'){
     h.hp--;
-    if(h.hp>0){say(h,pick(L.elderHit),700);h.cr.classList.remove('shake');void h.cr.offsetWidth;h.cr.classList.add('shake');
-      clearTimeout(h.t);h.t=setTimeout(()=>expire(h),700);return}
+    if(h.hp>0){say(h,pick(T().L.elderHit),'elder',700);sfx.elderHit();h.cr.classList.remove('shake');void h.cr.offsetWidth;h.cr.classList.add('shake');
+      particles(h,['#a9a59c','#cfd8d6'],5);clearTimeout(h.t);h.t=setTimeout(()=>expire(h),750);return}
     const add=(t==='elder'?8:3)+(S.combo>=5?2:0);
     S.combo++;S.kills++;S.days=Math.min(GOAL,S.days+add);
-    say(h,pick(L.ouch),600);down(h,'hit');sfx.kill();floatAt(h,'+'+add+'天','good');
+    fx('bam',T().slap,x,y,360);say(h,pick(T().L.ouch),'ouch',600);down(h,'hit');sfx.kill();buzz(15);shakeField();
+    particles(h,t==='elder'?['#a9a59c','#9a6a2a','#cfd8d6']:['#e8a33d','#f3efe6','#cfd8d6']);
+    floatAt(h,T().plus(add),'good');
+    const db=$('days');db.classList.remove('bump');void db.offsetWidth;db.classList.add('bump');
+    if(S.combo>=5&&S.combo%5===0){fx('pop',T().comboPop(S.combo),null,null,950);sfx.combo()}
     checkMS();
   }else if(t==='tempt'){
-    S.smoked++;S.crave+=24;S.combo=0;down(h,'hit');sfx.bad();floatAt(h,'抽了一根','bad');
-    news('你抽了「最後一根」。菸蟲們集體鼓掌。');
+    S.smoked++;S.crave+=24;S.combo=0;down(h,'hit');sfx.bad();buzz([40,40,80]);shakeField();
+    fx('cough',T().cough,null,null,1150);floatAt(h,T().smokedF,'bad');news(T().nSmoked);
   }else if(t==='gum'){
-    S.crave=Math.max(0,S.crave-20);down(h,'hit');sfx.gum();floatAt(h,'菸癮 −20%','cool');news('嚼口香糖，嘴巴有事做，菸蟲閉嘴三秒。');
+    S.crave=Math.max(0,S.crave-20);down(h,'hit');sfx.gum();particles(h,['#2fa36b','#b9efcf'],8);floatAt(h,T().gumF,'cool');news(T().nGum);
   }
   render();
   if(S.days>=GOAL)end(true);
 }
 function checkMS(){
-  while(S.msi<MS.length&&S.days>=MS[S.msi].d){
-    const m=MS[S.msi++];sfx.ms();news(m.t+'：'+m.m);
+  while(S.msi<MSD.length&&S.days>=MSD[S.msi]){
+    const [t,m]=T().MS[S.msi++];sfx.ms();news(t+'：'+m);
     const old=field.querySelector('.toast');if(old)old.remove();
-    const d=document.createElement('div');d.className='toast';d.innerHTML=`<b>${m.t}</b><span>${m.m}</span>`;
+    const d=document.createElement('div');d.className='toast';d.innerHTML=`<b>${t}</b><span>${m}</span>`;
     field.appendChild(d);setTimeout(()=>d.remove(),2600);
   }
 }
-
-/* ---------- render / loop ---------- */
-const fmt=n=>'NT$'+n.toLocaleString('en-US');
 function render(){
   S.crave=Math.max(0,Math.min(100,S.crave));
   $('days').textContent=S.days;$('money').textContent=fmt(S.days*PACK);$('combo').textContent=S.combo;
@@ -373,56 +525,68 @@ function render(){
   $('cbarWrap').classList.toggle('hot',S.crave>70);
   $('gbar').style.width=(S.days/GOAL*100)+'%';
   goal.querySelectorAll('.tick').forEach(t=>t.classList.toggle('done',S.days>=+t.dataset.d));
+  $('lungFill').setAttribute('fill',lerpHex('#7a6250','#ff8f86',prog()));
+  field.style.setProperty('--v',Math.max(0,(S.crave-50)/50*.55).toFixed(3));
 }
 function frame(ts){
-  if(!S.run)return;
-  const dt=S.last?(ts-S.last)/1000:0;S.last=ts;
+  if(!S.run)return;const dt=S.last?(ts-S.last)/1000:0;S.last=ts;
   S.crave-=0.9*dt;render();
   if(S.crave>=100){end(false);return}
   requestAnimationFrame(frame);
 }
-
-/* ---------- start / end ---------- */
 function start(){
-  try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume&&ac.resume()}catch(e){}
+  initAudio();
   holes.forEach(h=>{clearTimeout(h.t);h.type=null;h.cr.className='critter';h.bb.classList.remove('on');h.el.classList.remove('tempt')});
-  field.querySelectorAll('.toast,.float').forEach(n=>n.remove());
-  reset();S.run=true;render();news('戒菸第一天。菸蟲們還不知道你是認真的。');
+  field.querySelectorAll('.fx,.toast').forEach(n=>n.remove());
+  reset();S.run=true;render();news(T().nStart);
   $('startOv').hidden=true;$('endOv').hidden=true;
-  setTimeout(schedule,500);requestAnimationFrame(frame);
+  bgmStart();setTimeout(schedule,500);requestAnimationFrame(frame);
 }
+let lastWin=false;
 function end(win){
-  S.run=false;clearTimeout(S.spawnT);holes.forEach(h=>{clearTimeout(h.t);if(h.type)down(h)});
+  S.run=false;lastWin=win;clearTimeout(S.spawnT);bgmStop();holes.forEach(h=>{clearTimeout(h.t);if(h.type)down(h)});
+  win?sfx.win():sfx.lose();
   if(S.days>best){best=S.days;try{localStorage.setItem('smokebug_best',best)}catch(e){}}
-  $('rDays').textContent=S.days;$('rKills').textContent=S.kills;$('rMoney').textContent=fmt(S.days*PACK);
-  let title,lead,quote,who;
-  if(win){
-    title=S.smoked===0?'鋼鐵肺':S.smoked<=2?'戒菸成功':'險勝';
-    lead=`撐滿一年。冠心病風險約降到吸菸者的一半，省下 ${fmt(GOAL*PACK)}。`+(S.smoked?`途中破功 ${S.smoked} 次，不過還是撐住了。`:'一根都沒碰。');
-    quote='……好啦，我們搬去隔壁那位的肺了。';who='菸蟲代表，打包中';
-  }else{
-    title='破戒了';
-    lead=S.days<3?`第 ${S.days} 天就失守，戒斷期最難熬，不意外。`:S.days<30?`第 ${S.days} 天在便利商店門口失守。`:S.days<180?`撐了 ${S.days} 天，比上次多嗎？`:`都撐到第 ${S.days} 天了，不甘心吧。`;
-    quote=S.days<30?'我就說你戒不掉。':S.days<180?'其實我差點就要搬家了。':'嚇死，差一點點就被趕走。';who='你肺裡的菸蟲';
-  }
-  $('endTitle').textContent=title;$('endLead').textContent=lead;
-  $('endQuote').innerHTML=`「${quote}」<small>— ${who}</small>`;
-  $('shareText').hidden=true;$('copyBtn').textContent='複製戰績';
-  $('endOv').hidden=false;
+  fillEnd();$('shareText').hidden=true;$('endOv').hidden=false;
 }
-function shareText(){
-  return S.days>=GOAL?`我在《菸蟲退散》戒菸滿一年，拍死 ${S.kills} 隻菸蟲，省下 ${fmt(GOAL*PACK)}。你撐得過幾天？\nhttps://nosmokeagain.github.io/SmokeBug/`
-   :`我在《菸蟲退散》戒菸第 ${S.days} 天破功，拍死 ${S.kills} 隻菸蟲。你撐得過幾天？\nhttps://nosmokeagain.github.io/SmokeBug/`;
+function fillEnd(){
+  const L=T();
+  $('rDays').textContent=S.days;$('rKills').textContent=S.kills;$('rMoney').textContent=fmt(S.days*PACK);
+  $('lrD').textContent=L.rD;$('lrK').textContent=L.rK;$('lrM').textContent=L.rM;
+  if(lastWin){$('endTitle').textContent=L.winT[S.smoked===0?0:S.smoked<=2?1:2];$('endLead').textContent=L.winLead(S.smoked);
+    $('endQuote').innerHTML=`「${L.winQ}」<small>— ${L.winWho}</small>`}
+  else{$('endTitle').textContent=L.loseT;$('endLead').textContent=L.loseLead(S.days);
+    $('endQuote').innerHTML=`「${L.loseQ(S.days)}」<small>— ${L.loseWho}</small>`}
+  $('copyBtn').textContent=L.copy;$('againBtn').textContent=L.again;$('endNote').textContent=L.note;
 }
 $('copyBtn').addEventListener('click',()=>{
-  const t=shareText(),el=$('shareText');
-  const fallback=()=>{el.hidden=false;el.textContent=t;const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);$('copyBtn').textContent='請長按複製'};
-  try{navigator.clipboard.writeText(t).then(()=>{$('copyBtn').textContent='已複製'},fallback)}catch(e){fallback()}
+  const t=T().share(lastWin,S.days,S.kills)+'\n'+SITE,el=$('shareText');
+  const fallback=()=>{el.hidden=false;el.textContent=t;const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);$('copyBtn').textContent=T().hold};
+  try{navigator.clipboard.writeText(t).then(()=>{$('copyBtn').textContent=T().copied},fallback)}catch(e){fallback()}
 });
+
+/* ================= language ================= */
+function applyLang(){
+  const L=T();document.documentElement.lang=lang==='en'?'en':lang==='tw'?'nan-Hant-TW':'zh-Hant';
+  $('sTitle').innerHTML=L.name;$('sLead').textContent=L.lead;$('startBtn').textContent=L.start;
+  $('bestStart').textContent=best?L.best(best):'';
+  $('rules').innerHTML=L.rules.map(([b,s],i)=>`<li>${SPR[['bug','elder','tempt','gum','warn'][i]]()}<div><b>${b}</b><br><span>${s}</span></div></li>`).join('');
+  $('lDayPre').textContent=L.dayPre;$('lDayPost').textContent=L.dayPost;$('lSaved').textContent=L.saved;$('lCombo').textContent=L.combo;
+  $('lCrave').textContent=L.crave;$('lNews').textContent=L.news;$('muteBtn').setAttribute('aria-label',L.sound);
+  goal.querySelectorAll('.tick').forEach(t=>t.textContent=+t.dataset.d===GOAL?L.year:L.tick(+t.dataset.d));
+  if(!S.run)news(L.nIntro);
+  if(!$('endOv').hidden)fillEnd();
+  document.querySelectorAll('[data-langs] button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.l===lang?'true':'false'));
+}
+document.querySelectorAll('[data-langs]').forEach(box=>{
+  box.innerHTML=[['zh','中文'],['tw','台語'],['en','EN']].map(([k,n])=>`<button data-l="${k}" aria-pressed="false">${n}</button>`).join('');
+  box.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;lang=b.dataset.l;try{localStorage.setItem('smokebug_lang',lang)}catch(e){}
+    applyLang();initAudio();babble('哈哈哈','bug')});
+});
+$('muteBtn').addEventListener('click',()=>{initAudio();setMute(!muted)});
 $('startBtn').addEventListener('click',start);
 $('againBtn').addEventListener('click',start);
-$('bestStart').textContent=best?`最佳紀錄：戒菸 ${best} 天`:'';
-render();
+setMute(muted);applyLang();render();
 })();
 </script>
 </body>
